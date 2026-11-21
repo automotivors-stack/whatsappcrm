@@ -5,6 +5,8 @@ Erros sempre no formato `{ "error": "mensagem" }`:
 
 | Status | Quando |
 |---|---|
+| 415 | POST/PATCH sem `Content-Type: application/json` (proteção contra formulário forjado de outro site) |
+| 502 | WhatsApp ou e-mail recusado pelo OpenWA/Resend (a tentativa fica registrada como `falha`) |
 | 400 | JSON inválido, campo desconhecido, fase/fornecedor inválido, id inválido, fornecedor ausente em "Aprovado" ou depois |
 | 401 | Sem usuário e senha, ou incorretos |
 | 404 | `{ "error": "Oportunidade não encontrada" }` |
@@ -120,3 +122,46 @@ Resposta `201`: a interação criada.
 ```json
 { "id": 3, "oportunidade_id": 1, "tipo": "email", "destinatario": "financeiro@cliente.com.br", "assunto": "Proposta de taxas", "mensagem": "Segue a proposta.", "status_envio": "sucesso", "created_at": "2026-11-21 14:20:00" }
 ```
+
+## POST /api/whatsapp/send (envio REAL pelo OpenWA)
+
+```json
+POST /api/whatsapp/send
+{ "oportunidadeId": 1, "telefone": "(21) 98888-7777", "mensagem": "Olá! Segue a proposta...", "idempotencyKey": "3f1c0f9e-..." }
+```
+
+- `telefone` opcional: sem ele, usa o `whatsapp_contato` do diagnóstico (ou o número que conversou com o bot).
+  10 ou 11 dígitos ganham o 55; com `+` na frente, o DDI digitado é respeitado. Vira `<dígitos>@c.us`.
+- `mensagem` obrigatória, até 4096 caracteres (limite do OpenWA).
+- `idempotencyKey` opcional (a tela gera uma por rascunho): o OpenWA não reenvia a mesma chave por 24 h.
+
+Resposta `201`:
+
+```json
+{ "success": true, "messageId": "wamid.ABC", "interacao": { "id": 7, "oportunidade_id": 1, "tipo": "whatsapp_enviado", "destinatario": "5521988887777", "assunto": null, "mensagem": "Olá! Segue a proposta...", "status_envio": "sucesso", "created_at": "2026-11-21 14:30:52" } }
+```
+
+Falha no OpenWA, `502` (a tentativa fica na linha do tempo com `status_envio: "falha"`):
+
+```json
+{ "error": "O WhatsApp não foi enviado. OpenWA recusou o envio (HTTP 400).", "interacao": { "id": 8, "tipo": "whatsapp_enviado", "status_envio": "falha", "...": "..." } }
+```
+
+## POST /api/email/send (envio REAL pelo Resend)
+
+```json
+POST /api/email/send
+{ "oportunidadeId": 1, "email": "financeiro@cliente.com.br", "assunto": "Proposta de condições Pushin Pay", "corpoHtml": "<p>Olá!</p>", "corpoTexto": "Olá!", "idempotencyKey": "9b2e..." }
+```
+
+- `email` opcional: sem ele, usa o `email_contato` do diagnóstico. Um destinatário só.
+- `assunto` obrigatório (até 200 caracteres; quebras de linha viram espaço).
+- `corpoHtml` obrigatório. `corpoTexto` opcional: sem ele, é derivado do HTML (melhora a entrega).
+- Remetente: `RESEND_FROM_EMAIL` (domínio verificado no Resend).
+- "Sucesso" quer dizer que o Resend aceitou o e-mail; a entrega na caixa do cliente acontece depois.
+
+Resposta `201`: `{ "success": true, "emailId": "re_123", "interacao": { "tipo": "email_enviado", "assunto": "...", "mensagem": "<p>Olá!</p>", "status_envio": "sucesso", "...": "..." } }`.
+Falha no Resend: `502 { "error": "O e-mail não foi enviado. Resend recusou o envio (HTTP 403): ...", "interacao": { "status_envio": "falha", ... } }`.
+
+Se o envio sair mas o registro na linha do tempo falhar, a resposta é `500` com
+"... enviado, mas não foi registrado na linha do tempo. Não reenvie; avise o suporte."

@@ -6,9 +6,11 @@ import { FORNECEDORES } from "../lib/custosParceiros.js";
 import { ErroPrecificacao, montarPrecificacao } from "../lib/precificacao.js";
 
 export class ErroLeads extends Error {
-  constructor(mensagem, status = 400) {
+  /** @param {object} [dados] campos extras devolvidos junto com { error } (ex.: a interação de falha) */
+  constructor(mensagem, status = 400, dados = undefined) {
     super(mensagem);
     this.status = status;
+    this.dados = dados;
   }
 }
 

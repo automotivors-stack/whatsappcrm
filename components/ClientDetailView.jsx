@@ -9,6 +9,10 @@ import { FORNECEDORES, KLUUBPAY, PUSHIN_PAY, VERSAO_TABELA_CUSTOS } from "../lib
 import { linhasDaMesa } from "../lib/precificacao.js";
 import { comSinal, dinheiro, lerDecimal, paraCampo, percentual, soDigitos } from "../lib/formato.js";
 import { buscarDossie, patchLead } from "../lib/apiLeads.js";
+import { htmlParaTexto } from "../lib/proposta.js";
+import PainelComunicacaoCliente from "./PainelComunicacaoCliente.jsx";
+
+const ROTULO_INTERACAO = { whatsapp_enviado: "WhatsApp enviado", email_enviado: "E-mail enviado" };
 
 const ESTILO_FORNECEDOR = {
   [PUSHIN_PAY]: { icone: "🟢", classe: "border-emerald-300 bg-emerald-50 text-emerald-800" },
@@ -541,6 +545,14 @@ export default function ClientDetailView({ leadId, faseDesejada, onFechar, onAtu
                 </div>
               </Bloco>
 
+              {/* Comunicação */}
+              <Bloco titulo="Comunicação com o cliente">
+                <PainelComunicacaoCliente
+                  lead={lead}
+                  onEnviado={(interacao) => interacao && setInteracoes((lista) => [interacao, ...lista])}
+                />
+              </Bloco>
+
               {/* Conversa com a IA */}
               <Bloco titulo={`Conversa no WhatsApp (${mensagens.length})`}>
                 {mensagens.length === 0 ? (
@@ -569,13 +581,20 @@ export default function ClientDetailView({ leadId, faseDesejada, onFechar, onAtu
                 ) : (
                   <ol className="flex flex-col gap-3">
                     {interacoes.map((i) => (
-                      <li key={i.id} className="border-l-2 border-slate-300 pl-3">
+                      <li key={i.id} className={`border-l-2 pl-3 ${i.status_envio === "falha" ? "border-red-300" : "border-slate-300"}`}>
                         <p className="text-xs text-slate-500">
-                          {i.created_at} · {i.tipo ?? "interação"}
-                          {i.status_envio && i.status_envio !== "sucesso" ? ` · ${i.status_envio}` : ""}
+                          {i.created_at} · {ROTULO_INTERACAO[i.tipo] ?? i.tipo ?? "interação"}
+                          {i.destinatario ? ` · ${i.destinatario}` : ""}
+                          {i.status_envio && i.status_envio !== "sucesso" && (
+                            <span className="ml-1 rounded bg-red-50 px-1 font-medium text-red-700">{i.status_envio === "falha" ? "falhou" : i.status_envio}</span>
+                          )}
                         </p>
                         {i.assunto && <p className="text-sm font-medium text-slate-900">{i.assunto}</p>}
-                        {i.mensagem && <p className="whitespace-pre-wrap text-sm text-slate-700">{i.mensagem}</p>}
+                        {i.mensagem && (
+                          <p className="whitespace-pre-wrap break-words text-sm text-slate-700">
+                            {i.tipo === "email_enviado" ? htmlParaTexto(i.mensagem) : i.mensagem}
+                          </p>
+                        )}
                       </li>
                     ))}
                   </ol>
