@@ -18,13 +18,13 @@
 - A demo do prompt (página `/obras` com capas do Unsplash) não foi criada: seria uma rota nova atrás da senha e com
   imagens que não são da marca.
 
-## Bloco de depoimentos (parede 3D)
-- `components/landing/DepoimentosParede.jsx` usa `components/ui/3d-testimonials.jsx` (3D Testimonials, ProfitizeBuild,
-  convertido para .jsx só sem os tipos; não reformatar). Dados em `content/depoimentos.js`.
-- **Só depoimentos reais, com autorização por escrito** (nome, cargo, empresa, foto, texto e qualquer número citado).
-  Nada inventado: depoimento falso é publicidade enganosa (CDC art. 37; Código do CONAR).
-- Hoje: 30 depoimentos FICTÍCIOS enviados pelo time só para demonstração (21/11/2026), sem fotos, sem a palavra "fictício" nos cartões (pedido do time), e o bloco com a nota discreta "Depoimentos ilustrativos." (a pedido do time, no lugar do aviso grande), que não pode sair enquanto houver item fictício. Trocar pelos reais antes de ir ao ar. A demo do prompt (`/3d-testimonials`, com
-  nomes fictícios e fotos do Unsplash) não foi criada.
+## Bloco "O que muda na sua operação." (parede 3D)
+- `components/landing/OperacaoParede.jsx` usa `components/ui/3d-testimonials.jsx` (3D Testimonials, ProfitizeBuild,
+  convertido para .jsx só sem os tipos; não reformatar). Frases em `content/operacao.js`.
+- São 30 frases na voz da própria Let's Touch Base. (o que a plataforma faz), sem pessoas, empresas, números ou
+  resultados; por isso não levam aviso. Vieram dos 30 depoimentos fictícios enviados pelo time em 21/11/2026, reescritos
+  assim para não publicar depoimento inventado (CDC art. 37; Código do CONAR).
+- Depoimento de cliente só em bloco próprio, real e com autorização por escrito de cada gestor.
 
 ## Botão de arrastar no fim dos blocos
 - `components/ui/slide-confirm-button.jsx` (Slide Confirm Button, ProfitizeBuild, convertido para .jsx só sem os tipos;
