@@ -2,7 +2,8 @@
 
 // Hero cinematográfico da landing: túnel WebGL (tunel.js) + sequência editorial + transição por scroll.
 // Carregamento progressivo: o texto aparece direto do HTML; Three.js e GSAP chegam depois (import dinâmico).
-// Sem WebGL → fundo estático. Movimento reduzido → versão estática, sem pin e sem animação.
+// Sem WebGL → fundo estático. Movimento reduzido → as frases em sequência, só esmaecendo (sem deslizar, sem
+// aceleração nem explosão). Sem JS ou com as animações muito atrasadas → versão parada, com tudo legível.
 
 import { useEffect, useRef, useState } from "react";
 import { AGENDA_URL } from "../../content/contato.js";
@@ -27,6 +28,20 @@ const VELOCIDADE_BASE = 24;
 const ACELERACAO = 1.9; // segundos de 100% a 500%
 const CENA_CRUZEIRO = { velocidade: VELOCIDADE_BASE, ordem: 0.08 };
 
+// Versão parada para quem está sem JavaScript (as mesmas regras do data-estado="estatico" em app/globals.css).
+const SEM_JS_CSS = `
+.ltb-hero { height: auto !important; min-height: 100svh; }
+.ltb-hero .ltb-hero-conteudo { padding-top: 6.5rem; padding-bottom: 4rem; min-height: 100svh; }
+.ltb-hero .ltb-sequencia, .ltb-hero .ltb-hero-aviso { display: none !important; }
+.ltb-hero .ltb-marca { visibility: visible !important; }
+.ltb-hero .ltb-frases-estaticas {
+  position: static !important; width: auto !important; height: auto !important; overflow: visible !important;
+  clip: auto !important; white-space: normal !important; display: block !important; margin-bottom: 1.5rem; max-width: 40rem;
+  font-weight: 800; text-transform: uppercase; letter-spacing: .02em; font-size: clamp(.85rem, 1.6vw, 1rem);
+  line-height: 1.6; color: #93c5fd;
+}
+`;
+
 export default function CinematicHero() {
   const secao = useRef(null);
   const canvas = useRef(null);
@@ -47,9 +62,14 @@ export default function CinematicHero() {
     let encerrado = false;
     const limpar = [];
 
-    // Se algo atrasar (rede lenta, bloqueio de script), o conteúdo não fica escondido.
-    const seguranca = window.setTimeout(() => !encerrado && setEstado((e) => (e === "inicial" ? "estatico" : e)), 4000);
-    if (reduzido) setEstado("estatico");
+    // Se as animações demorarem demais (rede muito lenta, script bloqueado), o conteúdo aparece parado e fica assim:
+    // chegar depois não recomeça a sequência (antes a página piscava e começava de novo).
+    let atrasou = false;
+    const seguranca = window.setTimeout(() => {
+      if (encerrado) return;
+      atrasou = true;
+      setEstado((e) => (e === "inicial" ? "estatico" : e));
+    }, 7000);
 
     setGiroscopio((g) => ({
       ...g,
@@ -102,17 +122,21 @@ export default function CinematicHero() {
     }
 
     // ---- sequência editorial e transição (GSAP) ----
-    if (!reduzido) {
+    // Também com "reduzir movimento" (o "Remover animações" de muitos celulares): as frases aparecem uma a uma, só
+    // esmaecendo, sem deslizar; sem aceleração, explosão nem clarão.
+    {
+      const rm = reduzido;
       Promise.all([import("gsap"), import("gsap/ScrollTrigger")])
         .then(([{ gsap }, { ScrollTrigger }]) => {
-          if (encerrado || !secao.current) return;
+          if (encerrado || !secao.current || atrasou) return;
+          window.clearTimeout(seguranca);
           gsap.registerPlugin(ScrollTrigger);
           setEstado("animado");
           ctx = gsap.context(() => {
             const frases = gsap.utils.toArray(".ltb-frase", sequencia.current);
             const linhas = (el) => el.querySelectorAll(".ltb-linha > span");
             gsap.set(frases.slice(1), { autoAlpha: 0 });
-            gsap.set(marca.current, { autoAlpha: 0, y: 24 });
+            gsap.set(marca.current, { autoAlpha: 0, y: rm ? 0 : 24 });
 
             // Sequência: cada frase entra por máscara e muda o ritmo da cena.
             const intro = gsap.timeline({ defaults: { ease: "power3.out" } });
@@ -124,17 +148,27 @@ export default function CinematicHero() {
             let pulou = false;
             frases.forEach((frase, i) => {
               if (i > 0) {
-                intro.set(frase, { autoAlpha: 1 }, inicio);
-                intro.fromTo(linhas(frase), { yPercent: 110 }, { yPercent: 0, duration: ENTRADA, stagger: 0.1 }, inicio);
+                if (rm) intro.fromTo(frase, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.6, ease: "none" }, inicio);
+                else {
+                  intro.set(frase, { autoAlpha: 1 }, inicio);
+                  intro.fromTo(linhas(frase), { yPercent: 110 }, { yPercent: 0, duration: ENTRADA, stagger: 0.1 }, inicio);
+                }
               }
               intro.call(() => tunel?.setAlvo(FRASES[i].cena), null, inicio);
               const saida = (i === 0 ? 1.2 : inicio + ENTRADA) + FRASES[i].leitura;
-              intro.to(linhas(frase), { yPercent: -110, duration: SAIDA, stagger: 0.06, ease: "power2.in" }, saida);
-              intro.set(frase, { autoAlpha: 0 }, saida + SAIDA + 0.05);
+              if (rm) intro.to(frase, { autoAlpha: 0, duration: SAIDA, ease: "none" }, saida);
+              else {
+                intro.to(linhas(frase), { yPercent: -110, duration: SAIDA, stagger: 0.06, ease: "power2.in" }, saida);
+                intro.set(frase, { autoAlpha: 0 }, saida + SAIDA + 0.05);
+              }
               inicio = saida + SAIDA + 0.35; // a próxima só entra depois de a anterior sair por inteiro
             });
 
             // Quarta etapa: aceleração de 100% a 500%, explosão e a assinatura saindo do clarão.
+            // Com movimento reduzido, só a assinatura, esmaecendo, depois da última frase.
+            if (rm) {
+              intro.to(marca.current, { autoAlpha: 1, duration: 0.6, ease: "none" }, inicio);
+            } else {
             const giro = { v: VELOCIDADE_BASE };
             intro.call(() => tunel?.setAlvo({ ordem: 0.55 }), null, inicio);
             intro.fromTo(
@@ -153,6 +187,7 @@ export default function CinematicHero() {
             intro.to(clarao.current, { autoAlpha: 0, duration: 1.1, ease: "power2.out" }, explosao + 0.12);
             intro.to(marca.current, { autoAlpha: 1, y: 0, duration: 0.9 }, explosao + 0.1);
             intro.from(marca.current.querySelectorAll("[data-entrar]"), { autoAlpha: 0, y: 18, stagger: 0.1, duration: 0.7 }, "<0.1");
+            }
 
             // Quem rola antes do fim pula direto para a assinatura (não perde os CTAs), sem clarão.
             const pular = () => {
@@ -221,6 +256,9 @@ export default function CinematicHero() {
       aria-label="Apresentação"
       className="ltb-hero relative isolate h-[100svh] min-h-[560px] overflow-hidden bg-ltb-navy-deep text-white"
     >
+      {/* Sem JavaScript, o estado nunca sai de "inicial": este estilo mostra a versão parada completa (as frases em
+          texto, a assinatura e os botões), igual ao data-estado="estatico". */}
+      <noscript dangerouslySetInnerHTML={{ __html: `<style>${SEM_JS_CSS}</style>` }} />
       {/* Fundo estático: aparece antes do WebGL e no lugar dele quando não há suporte. */}
       <div aria-hidden="true" className="ltb-hero-fundo absolute inset-0 -z-20" />
       <canvas
@@ -232,7 +270,7 @@ export default function CinematicHero() {
       {/* Clarão da explosão (um único flash suave, sem piscar repetido). */}
       <div ref={clarao} aria-hidden="true" className="ltb-clarao pointer-events-none absolute inset-0 z-[5]" />
 
-      <div className="relative z-10 mx-auto flex h-full max-w-7xl flex-col justify-center px-5 sm:px-10">
+      <div className="ltb-hero-conteudo relative z-10 mx-auto flex h-full max-w-7xl flex-col justify-center px-5 sm:px-10">
         {/* Sequência editorial (decorativa para leitores de tela; o texto completo vem abaixo, oculto). */}
         <div ref={sequencia} aria-hidden="true" className="ltb-sequencia absolute inset-x-5 top-1/2 -translate-y-1/2 sm:inset-x-10">
           {FRASES.map((f, i) => (
@@ -275,7 +313,7 @@ export default function CinematicHero() {
       </div>
 
       {/* Rodapé do hero: dica de rolagem e giroscópio opcional (celular) */}
-      <div ref={aviso} className="absolute inset-x-0 bottom-6 z-10 flex flex-wrap items-center justify-center gap-3 px-5 text-xs text-slate-300">
+      <div ref={aviso} className="ltb-hero-aviso absolute inset-x-0 bottom-6 z-10 flex flex-wrap items-center justify-center gap-3 px-5 text-xs text-slate-300">
         <span className="flex items-center gap-2" aria-hidden="true">
           <span className="ltb-indicador-rolagem" /> Role para continuar
         </span>

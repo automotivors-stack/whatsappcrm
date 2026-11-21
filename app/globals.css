@@ -180,3 +180,9 @@ body {
 @media (max-width: 639px) {
   .ltb-trilho-pilares { --ltb-palco: 600px; }
 }
+
+/* Versão parada do hero (sem JS ou com as animações muito atrasadas): a altura acompanha o conteúdo, para as frases,
+   a assinatura e os botões não passarem por cima do cabeçalho nem uns dos outros no celular. */
+.ltb-hero[data-estado="estatico"] { height: auto; min-height: 100svh; }
+.ltb-hero[data-estado="estatico"] .ltb-hero-conteudo { padding-top: 6.5rem; padding-bottom: 4rem; min-height: 100svh; }
+.ltb-hero[data-estado="estatico"] .ltb-hero-aviso { display: none; }

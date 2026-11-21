@@ -37,6 +37,13 @@
   própria agenda. A pré-triagem (etapa 2) continua planejada; quando existir, decidir se substitui ou antecede a agenda.
 - A demo do prompt (`/slide-confirm-button`, marca fictícia Vozi) não foi criada.
 
+## Hero: quando a sequência aparece
+- Normal: as 3 frases, a aceleração de 1x a 5x, a explosão e a assinatura (~18 s).
+- "Reduzir movimento" do sistema (o "Remover animações" de muitos Android): as 3 frases também aparecem, uma a uma,
+  só esmaecendo; sem deslizar, sem aceleração, explosão nem clarão.
+- Animações muito atrasadas (mais de 7 s depois de a página reagir) ou sem JavaScript: versão parada, com as frases em
+  texto, a assinatura e os botões, sem nada sobreposto. Chegar atrasado não recomeça a sequência.
+
 ## Segurança
 - Rota pública só `GET`/`HEAD /` (`ROTAS_PUBLICAS` em `proxy.js`); o restante do CRM segue com HTTP Basic.
 - A landing não importa serviços, banco nem variáveis de ambiente do servidor.
