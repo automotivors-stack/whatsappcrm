@@ -1,5 +1,5 @@
 // Landing pública da Let's Touch Base. (GET "/" liberado no proxy.js; não lê banco nem dados do CRM).
-// Etapa 1: hero cinematográfico + transição + seção 2. As demais seções entram nas próximas etapas.
+// Hero, problema, pilares, "o que muda", plataforma (prévia) e, por último, o formulário de diagnóstico.
 
 import LandingHeader from "../../components/landing/LandingHeader.jsx";
 import CinematicHero from "../../components/landing/CinematicHero.jsx";
@@ -7,6 +7,8 @@ import ProblemaNarrativa from "../../components/landing/ProblemaNarrativa.jsx";
 import PilaresRoda from "../../components/landing/PilaresRoda.jsx";
 import OperacaoParede from "../../components/landing/OperacaoParede.jsx";
 import ProximasEtapas from "../../components/landing/ProximasEtapas.jsx";
+import FormularioDiagnostico from "../../components/landing/FormularioDiagnostico.jsx";
+import RodapeLanding from "../../components/landing/RodapeLanding.jsx";
 import WhatsAppFlutuante from "../../components/landing/WhatsAppFlutuante.jsx";
 
 export const metadata = {
@@ -31,7 +33,9 @@ export default function Inicio() {
         <PilaresRoda />
         <OperacaoParede />
         <ProximasEtapas />
+        <FormularioDiagnostico />
       </main>
+      <RodapeLanding />
       <WhatsAppFlutuante />
     </>
   );

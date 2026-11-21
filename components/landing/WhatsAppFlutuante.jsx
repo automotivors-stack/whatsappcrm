@@ -23,8 +23,8 @@ export default function WhatsAppFlutuante() {
   const [depoisDoHero, setDepoisDoHero] = useState(false);
   const [ctaNaTela, setCtaNaTela] = useState(false);
   const [estreito, setEstreito] = useState(false);
-  // No celular, sai de lado enquanto um botão de arrastar (ou outro botão de agendar) está na tela: os dois ficariam
-  // um por cima do outro no rodapé da tela.
+  // No celular, sai de lado enquanto um botão de arrastar ou o formulário de diagnóstico (que já tem o próprio botão de
+  // WhatsApp) está na tela: ficariam um por cima do outro no rodapé da tela.
   const visivel = depoisDoHero && !(estreito && ctaNaTela);
 
   useEffect(() => {
@@ -41,7 +41,7 @@ export default function WhatsAppFlutuante() {
       entradas.forEach((e) => (e.isIntersecting ? naTela.add(e.target) : naTela.delete(e.target)));
       setCtaNaTela(naTela.size > 0);
     });
-    document.querySelectorAll(".scb, #demonstracao .ltb-botao-primario").forEach((el) => ioCta.observe(el));
+    document.querySelectorAll(".scb, #demonstracao").forEach((el) => ioCta.observe(el));
 
     const mq = window.matchMedia("(max-width: 639px)");
     const lerTela = () => setEstreito(mq.matches);

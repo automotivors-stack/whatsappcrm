@@ -61,6 +61,8 @@ Resend (e-mail) · Anthropic (`@anthropic-ai/sdk`, IA do diagnóstico). Gerencia
   de cliente só real e com autorização por escrito (nunca inventado)
 - `components/ui/slide-confirm-button.jsx` + `components/landing/DeslizeCTA.jsx` (cores em `.ltb-deslize`): o arrasto abre a
   agenda do Google em nova aba (`AGENDA_URL` em `content/contato.js`, a mesma de todos os botões de agendar); nunca diz que agendou
+- `components/landing/FormularioDiagnostico.jsx` + `content/diagnostico.js`: último bloco; monta a mensagem e abre o WhatsApp
+  (`WHATSAPP_NUMERO` em `content/contato.js`). Não grava nada no site; nunca diz que enviou
 
 ## Regras de negócio (nunca quebrar; cada uma tem teste)
 

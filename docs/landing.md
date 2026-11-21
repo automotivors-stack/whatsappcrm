@@ -51,6 +51,16 @@
 - Aparece depois do hero e some ao voltar ao topo. No celular, sai de lado enquanto um botão de agendar está na tela
   (ficariam um por cima do outro).
 
+## Último bloco: formulário de diagnóstico (`#demonstracao`)
+- `components/landing/FormularioDiagnostico.jsx` + `content/diagnostico.js` (opções, validação e mensagem; testes em
+  `tests/diagnosticoLanding.test.js`).
+- Duas perguntas de escolha (prioridade, principal gargalo), nome (obrigatório) e empresa (opcional), resumo ao vivo.
+  "Iniciar conversa com diagnóstico no WhatsApp" abre o WhatsApp do especialista com a mensagem montada; "Prefiro escolher
+  um horário na agenda" abre `AGENDA_URL`.
+- Nada é gravado no site (sem banco, sem cadastro, sem cookie): os dados vão só na mensagem que a pessoa envia. O aviso
+  depois do clique diz que o WhatsApp abriu com a mensagem pronta, nunca que algo foi enviado.
+- As opções são texto provisório (aprovar com o time). A pré-triagem com banco e painel continua planejada à parte.
+
 ## Segurança
 - Rota pública só `GET`/`HEAD /` (`ROTAS_PUBLICAS` em `proxy.js`); o restante do CRM segue com HTTP Basic.
 - A landing não importa serviços, banco nem variáveis de ambiente do servidor.
