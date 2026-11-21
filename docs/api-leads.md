@@ -49,7 +49,8 @@ Resposta `200`, array em `created_at DESC`:
 
 ## PATCH /api/leads (id no corpo) e PATCH /api/leads/:id
 
-Campos aceitos: `status_kanban`, `fornecedor_operacao`, `dados_precificacao`, `volume_real_mes`, `med_real_mes`
+Campos aceitos: `status_kanban`, `fornecedor_operacao`, `dados_precificacao`, `volume_real_mes`, `med_real_mes`,
+`lucro_real_mes` (lucro líquido da consultoria no mês, em reais; pode ser negativo)
 e `status_relacionamento` (modo do bot no contato do lead: `"pausado_humano"` ou `"ia_ativa"`; só o consultor troca,
 mensagem do cliente nunca reativa a IA). Todo lead devolvido pela API traz `status_relacionamento`.
 Qualquer outro campo é recusado com 400. Em `/api/leads/:id`, um `id` no corpo diferente do da URL também é recusado.
@@ -175,3 +176,31 @@ Quando o WhatsApp vai para o mesmo número que conversa com o bot, a mensagem ta
 
 Se o envio sair mas o registro na linha do tempo falhar, a resposta é `500` com
 "... enviado, mas não foi registrado na linha do tempo. Não reenvie; avise o suporte."
+
+## GET /api/dashboard/metrics?periodo=mes|90d|tudo
+
+Métricas do Dashboard Executivo. `periodo` (padrão `mes`) vale para o **funil e a conversão** (leads pela data
+de entrada no CRM). Carteira, TPV, lucro e MED são o **retrato atual**: o último valor lançado em cada conta.
+
+```json
+{
+  "periodo": { "id": "mes", "rotulo": "Este mês" },
+  "funil": { "fases": [{ "fase": "Contato Recebido", "quantidade": 1 }], "total": 8, "convertidos": 4, "conversao": 0.5 },
+  "operacao": { "contas_em_operacao": 3, "tpv": 985000, "volume_declarado": 950000, "atingimento_volume": 1.037 },
+  "lucro": { "realizado": 12900, "meta": 25000, "progresso": 0.516, "contas_com_lancamento": 2 },
+  "carteira": { "total_clientes": 8, "parceiros": [
+    { "fornecedor": "Pushin Pay", "rotulo": "Pushin Pay", "clientes": 3, "percentual_clientes": 0.375, "em_operacao": 2, "volume": 165000, "percentual_volume": 0.168 }
+  ] },
+  "alertas_med": [6],
+  "contas": [{ "id": 6, "nome": "Info Cursos", "fornecedor": "Kluubpay", "volume_declarado_texto": "R$ 800 mil", "volume_declarado": 800000,
+               "volume_real": 820000, "atingimento_volume": 1.025, "med_real": 0.9, "med_teto_texto": "0,5%", "med_teto": 0.5,
+               "med_status": "acima", "lucro_real": 9800 }]
+}
+```
+
+- Conversão = leads do período que estão em Aprovado, Operando ou Operando dentro das expectativas ÷ leads do período.
+- `med_status`: `dentro`, `acima` (MED real maior que o teto declarado), `sem_referencia` (teto não declarado ou
+  sem número) ou `sem_lancamento` (volume e MED reais ainda zerados).
+- Volume declarado e teto de MED vêm do diagnóstico como texto ("R$ 150 mil", "0,5%") e são lidos como número;
+  quando não dá para ler, o valor fica `null` e não entra nas somas.
+- Meta: `META_LUCRO_MENSAL` (padrão 25000). Lucro realizado = soma de `lucro_real_mes` das contas em operação.

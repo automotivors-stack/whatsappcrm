@@ -109,7 +109,7 @@ export default function ClientDetailView({ leadId, faseDesejada, onFechar, onAtu
   const [salvando, setSalvando] = useState(false);
   const [mesa, setMesa] = useState({ valorReferencia: "", itens: {} });
   const [mesaAlterada, setMesaAlterada] = useState(false);
-  const [operacao, setOperacao] = useState({ volume: "", med: "" });
+  const [operacao, setOperacao] = useState({ volume: "", med: "", lucro: "" });
 
   useEffect(() => {
     let ativo = true;
@@ -120,7 +120,11 @@ export default function ClientDetailView({ leadId, faseDesejada, onFechar, onAtu
         setInteracoes(dados.interacoes);
         setMensagens(dados.mensagens);
         setMesa(campoInicialPrecificacao(dados.lead));
-        setOperacao({ volume: paraCampo(dados.lead.volume_real_mes), med: paraCampo(dados.lead.med_real_mes) });
+        setOperacao({
+          volume: paraCampo(dados.lead.volume_real_mes),
+          med: paraCampo(dados.lead.med_real_mes),
+          lucro: paraCampo(dados.lead.lucro_real_mes),
+        });
       })
       .catch((e) => ativo && setErro(e.message));
     return () => {
@@ -237,11 +241,17 @@ export default function ClientDetailView({ leadId, faseDesejada, onFechar, onAtu
   async function salvarOperacao() {
     const volume = lerDecimal(operacao.volume) ?? 0;
     const med = lerDecimal(operacao.med) ?? 0;
-    if (Number.isNaN(volume) || Number.isNaN(med)) {
-      setMensagem({ tipo: "erro", texto: "Use só números no volume e no MED (ex.: 150000,00 e 0,35)." });
+    const textoLucro = String(operacao.lucro ?? "").trim();
+    const negativo = textoLucro.startsWith("-");
+    const lucroAbs = lerDecimal(negativo ? textoLucro.slice(1) : textoLucro) ?? 0;
+    if (Number.isNaN(volume) || Number.isNaN(med) || Number.isNaN(lucroAbs)) {
+      setMensagem({ tipo: "erro", texto: "Use só números (ex.: 150000,00 no volume, 0,35 no MED e 3200,00 no lucro)." });
       return;
     }
-    await salvar({ volume_real_mes: volume, med_real_mes: med }, "Acompanhamento operacional salvo.");
+    await salvar(
+      { volume_real_mes: volume, med_real_mes: med, lucro_real_mes: negativo ? -lucroAbs : lucroAbs },
+      "Acompanhamento operacional salvo.",
+    );
   }
 
   const grupos = useMemo(() => {
@@ -572,6 +582,18 @@ export default function ClientDetailView({ leadId, faseDesejada, onFechar, onAtu
                       className="w-full rounded-md border border-slate-300 bg-white px-2 py-1.5 disabled:bg-slate-100"
                     />
                     <span className="mt-1 block text-xs text-slate-500">Declarado no diagnóstico: {lead.taxa_med_operacao ?? "não informado"}</span>
+                  </label>
+                  <label className="text-sm sm:col-span-2">
+                    <span className="mb-1 block font-medium text-slate-700">Lucro líquido da consultoria no mês (R$)</span>
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      disabled={!emOperacao}
+                      value={operacao.lucro}
+                      onChange={(e) => setOperacao((o) => ({ ...o, lucro: e.target.value }))}
+                      className="w-full max-w-xs rounded-md border border-slate-300 bg-white px-2 py-1.5 disabled:bg-slate-100"
+                    />
+                    <span className="mt-1 block text-xs text-slate-500">Valor do relatório do parceiro. Soma na meta mensal do dashboard. Prejuízo: use sinal de menos.</span>
                   </label>
                 </div>
               </Bloco>

@@ -14,7 +14,7 @@ const ESPERADO = {
     "onde_opera_hoje", "volume_mensal", "numero_transacoes", "taxas_atuais", "taxa_med_operacao",
     "limite_por_venda", "limite_saque_diario", "saque_terceiros", "metodos_pagamento", "tipo_integracao",
     "whatsapp_contato", "email_contato", "resumo_executivo", "status_kanban", "fornecedor_operacao",
-    "dados_precificacao", "volume_real_mes", "med_real_mes", "created_at"],
+    "dados_precificacao", "volume_real_mes", "med_real_mes", "created_at", "lucro_real_mes"],
   interacoes_cliente: ["id", "oportunidade_id", "tipo", "destinatario", "assunto", "mensagem", "status_envio",
     "created_at"],
   eventos_processados: ["message_id", "provider", "created_at"],
@@ -31,7 +31,7 @@ test("cria as 5 tabelas com as colunas exatas", async () => {
 
 test("migração é idempotente", async () => {
   const db = novoBanco();
-  assert.equal((await migrar(db)).length, 3);
+  assert.equal((await migrar(db)).length, 4);
   assert.equal((await migrar(db)).length, 0);
 });
 

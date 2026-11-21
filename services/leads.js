@@ -16,7 +16,8 @@ export class ErroLeads extends Error {
 
 export const FILTRO_SEM_PARCEIRO = "sem_parceiro";
 const CAMPOS_EDITAVEIS = [
-  "status_kanban", "fornecedor_operacao", "dados_precificacao", "volume_real_mes", "med_real_mes", "status_relacionamento",
+  "status_kanban", "fornecedor_operacao", "dados_precificacao", "volume_real_mes", "med_real_mes", "lucro_real_mes",
+  "status_relacionamento",
 ];
 
 /** Modos do bot no contato. Só o consultor troca (pela ficha); mensagem do cliente nunca troca. */
@@ -233,6 +234,14 @@ export async function atualizarLead(db, entrada) {
     if (tem("med_real_mes")) {
       sets.push("med_real_mes = ?");
       args.push(numeroNaoNegativo(entrada.med_real_mes, "MED real do mês"));
+    }
+    if (tem("lucro_real_mes")) {
+      // Pode ser negativo (mês com prejuízo).
+      if (typeof entrada.lucro_real_mes !== "number" || !Number.isFinite(entrada.lucro_real_mes)) {
+        throw new ErroLeads("Lucro líquido do mês precisa ser um número.");
+      }
+      sets.push("lucro_real_mes = ?");
+      args.push(entrada.lucro_real_mes);
     }
     await tx.execute({ sql: `UPDATE oportunidades SET ${sets.join(", ")} WHERE id = ?`, args: [...args, id] });
     if (tem("status_relacionamento")) {
