@@ -72,6 +72,10 @@ export default function PilaresRoda() {
         items={ITENS}
         label="Let’s Touch Base."
         action=""
+        // Gira sozinha enquanto está na tela (anel, cada pilar, de volta ao anel) até o visitante mexer nela;
+        // com "reduzir movimento" no sistema, não gira. 2,6 s por pilar: tempo de ler a frase do cartão.
+        autoPlay
+        interval={2600}
         className="h-[min(78svh,760px)] max-sm:h-[68svh]"
         style={{
           "--ww-bg": "#050d1f",
