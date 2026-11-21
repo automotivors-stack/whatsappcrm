@@ -3,7 +3,7 @@
 //   chatId, body, type, timestamp, fromMe, isGroup, kind, contact?: { name?, pushName? }, senderPhone? } }
 
 import { getDb, registrarEventoSeNovo } from "../lib/db.js";
-import { digitos, mascarar, mesmoTelefone, telefoneDoChatId } from "../lib/telefone.js";
+import { chatIdDoTelefone, digitos, mascarar, mesmoTelefone, telefoneDoChatId } from "../lib/telefone.js";
 import { enviarMensagemWhatsApp } from "./whatsappService.js";
 import { responderComAgente } from "./agente.js";
 import { finalizarDiagnostico, tratarRespostaAdmin } from "./aprovacao.js";
@@ -23,6 +23,24 @@ export function contextoPadrao() {
 /** Telefone do remetente: do chatId (@c.us) ou, para privacy id (@lid), do senderPhone do OpenWA. */
 function telefoneDoRemetente(msg) {
   return telefoneDoChatId(msg.from) ?? (digitos(msg.senderPhone) || null);
+}
+
+export function textoAlertaFalhaIA(telefone) {
+  return `⚠️ *Alerta Operacional:* A IA de triagem encontrou uma instabilidade ao atender o lead +${telefone}. O bot foi pausado para que você assuma o contato manual.`;
+}
+
+/** Pausa o bot do contato e avisa o consultor. Falha no aviso fica no log, não derruba nada. */
+async function alertarFalhaIA(ctx, telefone, erro) {
+  console.error(`[agente] falha da IA para ${mascarar(telefone)}: ${erro?.message ?? erro}`);
+  await ctx.db.execute({
+    sql: "UPDATE contatos SET status_relacionamento = ?, updated_at = CURRENT_TIMESTAMP WHERE phone_number = ?",
+    args: [STATUS_PAUSADO, telefone],
+  });
+  try {
+    await ctx.enviar(chatIdDoTelefone(ctx.adminNumero), textoAlertaFalhaIA(telefone));
+  } catch (e) {
+    console.error(`[agente] alerta ao consultor não foi enviado: ${e?.message ?? e}`);
+  }
 }
 
 export async function processarEventoOpenWA(ctx, payload) {
@@ -95,7 +113,14 @@ export async function processarEventoOpenWA(ctx, payload) {
     return { acao: "salvo_pausado" };
   }
 
-  const resposta = await ctx.agente({ db, telefone, chatId: msg.from, mensagem: conteudo });
+  let resposta;
+  try {
+    resposta = await ctx.agente({ db, telefone, chatId: msg.from, mensagem: conteudo });
+  } catch (erro) {
+    // Zero lead perdido: IA fora (erro, cota, tempo esgotado ou recusa) → consultor assume.
+    await alertarFalhaIA(ctx, telefone, erro);
+    return { acao: "falha_ia" };
+  }
 
   // O consultor pode ter assumido a conversa enquanto a IA pensava: confere de novo antes de enviar.
   const agora = await db.execute({
