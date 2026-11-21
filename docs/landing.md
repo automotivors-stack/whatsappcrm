@@ -23,7 +23,7 @@
   convertido para .jsx só sem os tipos; não reformatar). Dados em `content/depoimentos.js`.
 - **Só depoimentos reais, com autorização por escrito** (nome, cargo, empresa, foto, texto e qualquer número citado).
   Nada inventado: depoimento falso é publicidade enganosa (CDC art. 37; Código do CONAR).
-- Hoje: 30 depoimentos FICTÍCIOS enviados pelo time só para demonstração (21/11/2026), sem fotos, sem a palavra "fictício" nos cartões (pedido do time), e o bloco com aviso de demonstração, que não pode sair enquanto houver item fictício. Trocar pelos reais antes de ir ao ar. A demo do prompt (`/3d-testimonials`, com
+- Hoje: 30 depoimentos FICTÍCIOS enviados pelo time só para demonstração (21/11/2026), sem fotos, sem a palavra "fictício" nos cartões (pedido do time), e o bloco com a nota discreta "Depoimentos ilustrativos." (a pedido do time, no lugar do aviso grande), que não pode sair enquanto houver item fictício. Trocar pelos reais antes de ir ao ar. A demo do prompt (`/3d-testimonials`, com
   nomes fictícios e fotos do Unsplash) não foi criada.
 
 ## Botão de arrastar no fim dos blocos
@@ -31,9 +31,9 @@
   não reformatar) e `components/landing/DeslizeCTA.jsx`, com a identidade da marca pela classe `ltb-deslize` em
   `app/globals.css` (pílula navy, puxador Electric Blue, fonte Inter).
 - No fim de "O problema" (Quero organizar), dos pilares (Agendar conversa) e dos depoimentos (Quero ver na prática).
-- O agendamento ainda não existe (etapa 2): completar o arrasto não marca nada; o balão diz "Levando você à
-  demonstração" e a página rola até `#demonstracao`. Quando a pré-triagem existir, o `onConfirm` passa a abrir o
-  formulário, e só confirma depois de gravar o pedido.
+- Agendamento: todos os botões de agendar (cabeçalho, hero, card Demonstração e os três de arrastar) abrem a agenda do
+  Google em nova aba (`AGENDA_URL` em `content/contato.js`). O balão só diz "Abrindo a agenda": quem confirma o horário é a
+  própria agenda. A pré-triagem (etapa 2) continua planejada; quando existir, decidir se substitui ou antecede a agenda.
 - A demo do prompt (`/slide-confirm-button`, marca fictícia Vozi) não foi criada.
 
 ## Segurança

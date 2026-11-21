@@ -7,7 +7,7 @@
 // Os 30 itens abaixo foram enviados pelo time em 21/11/2026 como FICTÍCIOS, "destinados exclusivamente a
 // demonstrações": pessoas e empresas não existem (nomes de empresa podem coincidir com empresas reais). Por isso cada um
 // tem `exemplo: true` e o bloco mostra o aviso de demonstração (a pedido do time, o cartão não leva a palavra
-// "fictício"; o aviso do bloco não pode sair enquanto houver item fictício). Antes de ir ao ar, troque pelos reais e
+// "fictício"; o bloco mostra só a nota discreta "Depoimentos ilustrativos.", que não pode sair enquanto houver item fictício). Antes de ir ao ar, troque pelos reais e
 // apague `exemplo: true` (o aviso some quando nenhum item tiver a marca).
 //
 // Campos: name (nome), username (cargo · empresa; único, é a chave do cartão), body (o depoimento),

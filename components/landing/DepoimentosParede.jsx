@@ -17,10 +17,8 @@ export default function DepoimentosParede() {
           A palavra de quem usa.
         </h2>
         {temExemplo && (
-          <p className="mt-5 inline-flex max-w-2xl rounded-[12px] border border-amber-300/40 bg-amber-300/10 px-4 py-2 text-sm text-amber-100">
-            Demonstração: depoimentos fictícios, de pessoas e empresas que não existem. Os depoimentos reais entram aqui
-            depois de autorizados por escrito pelos gestores.
-          </p>
+          // Discreto, mas presente: sem ele, depoimentos fictícios passariam por reais (CDC art. 37; CONAR).
+          <p className="mt-4 text-xs text-slate-400">Depoimentos ilustrativos.</p>
         )}
         <Testimonials3D
           testimonials={itens}

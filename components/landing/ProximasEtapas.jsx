@@ -1,5 +1,7 @@
 // Prévia em construção: destinos dos CTAs ("Conhecer a plataforma" e "Agendar demonstração")
-// enquanto as próximas seções e o formulário de pré-triagem não existem. Nada aqui simula envio.
+// enquanto as próximas seções não existem. A demonstração já agenda de verdade, pela agenda do Google (content/contato.js).
+
+import { AGENDA_URL } from "../../content/contato.js";
 
 export default function ProximasEtapas() {
   return (
@@ -22,10 +24,11 @@ export default function ProximasEtapas() {
             O próximo movimento pode transformar seu negócio.
           </h2>
           <p className="mt-3 text-slate-300">
-            O formulário para agendar uma demonstração ainda não está disponível nesta prévia. Ele será publicado com
-            validação, proteção antispam e consentimento, e só vai confirmar o pedido depois de registrá-lo de verdade.
+            Escolha um horário na agenda e converse com um consultor da Let&rsquo;s Touch Base.
           </p>
-          <p className="mt-5 inline-flex rounded-full border border-white/15 px-3 py-1 text-xs text-slate-300">Prévia: formulário em construção</p>
+          <a href={AGENDA_URL} target="_blank" rel="noopener noreferrer" className="ltb-botao-primario mt-6">
+            Agendar conversa<span className="sr-only"> (abre a agenda em nova aba)</span>
+          </a>
         </div>
       </div>
       <footer className="mx-auto mt-16 flex max-w-7xl flex-wrap items-baseline justify-between gap-3 border-t border-white/10 pt-8 text-sm text-slate-400">

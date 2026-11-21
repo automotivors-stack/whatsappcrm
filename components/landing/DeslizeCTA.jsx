@@ -2,26 +2,26 @@
 
 // O botão de arrastar (components/ui/slide-confirm-button.jsx) com a identidade da Let's Touch Base.: pílula navy,
 // puxador em Electric Blue, ícone claro e a fonte da marca (classe ltb-deslize em app/globals.css).
-// Honesto: o agendamento ainda não existe (é a etapa 2, a pré-triagem). Completar o arrasto não "marca" nada: confirma
-// e leva a pessoa até a seção de demonstração.
+// Completar o arrasto abre a agenda do Google (content/contato.js) numa nova aba, para a pessoa escolher o horário.
+// O botão não diz que agendou: quem agenda é a própria agenda; o balão só avisa que ela está abrindo.
 
 import { SlideConfirmButton } from "../ui/slide-confirm-button.jsx";
+import { AGENDA_URL } from "../../content/contato.js";
 
 export default function DeslizeCTA({
   rotulo = "Agendar conversa",
-  legenda = "Arraste até o fim para ir à demonstração",
-  destino = "#demonstracao",
+  legenda = "Arraste até o fim para abrir a agenda",
   alinhamento = "centro", // "centro" | "esquerda"
   fundo = "escuro", // "escuro" | "claro": só muda a cor da legenda
 }) {
-  const ir = () => {
-    // deixa o visto e o balão aparecerem antes de rolar
-    window.setTimeout(() => {
-      const alvo = document.querySelector(destino);
-      if (!alvo) return;
-      const reduzido = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      alvo.scrollIntoView({ behavior: reduzido ? "auto" : "smooth", block: "start" });
-    }, 650);
+  // Abre na hora, ainda dentro do gesto (soltar o puxador ou apertar Enter): fora dele o navegador bloquearia a aba nova.
+  // Se mesmo assim ela for bloqueada, a agenda abre nesta aba, depois de o visto aparecer.
+  const abrirAgenda = () => {
+    // Sem "noopener" nas opções: com ele o navegador sempre devolve null e não daria para saber se a aba abriu.
+    // O vínculo com esta página é cortado logo em seguida (mesmo efeito do noopener).
+    const aba = window.open(AGENDA_URL, "_blank");
+    if (aba) aba.opener = null;
+    else window.setTimeout(() => window.location.assign(AGENDA_URL), 700);
   };
 
   return (
@@ -29,9 +29,9 @@ export default function DeslizeCTA({
       <SlideConfirmButton
         className="ltb-deslize"
         label={rotulo}
-        confirmedLabel="Levando você à demonstração"
-        hint="Arraste até o fim ou aperte Enter para ir até a seção de demonstração."
-        onConfirm={ir}
+        confirmedLabel="Abrindo a agenda"
+        hint="Arraste até o fim ou aperte Enter para abrir a agenda e escolher um horário. Abre em nova aba."
+        onConfirm={abrirAgenda}
         resetAfter={2400}
       />
       {legenda && (

@@ -5,6 +5,7 @@
 // Sem WebGL → fundo estático. Movimento reduzido → versão estática, sem pin e sem animação.
 
 import { useEffect, useRef, useState } from "react";
+import { AGENDA_URL } from "../../content/contato.js";
 
 // Cada frase em linhas (a última em gradiente) e quanto tempo fica na tela para ser lida.
 const FRASES = [
@@ -266,7 +267,9 @@ export default function CinematicHero() {
           </p>
           <div data-entrar className="mt-8 flex flex-wrap gap-3">
             <a href="#plataforma" className="ltb-botao-primario">Conhecer a plataforma</a>
-            <a href="#demonstracao" className="ltb-botao-secundario">Agendar uma demonstração</a>
+            <a href={AGENDA_URL} target="_blank" rel="noopener noreferrer" className="ltb-botao-secundario">
+              Agendar uma demonstração<span className="sr-only"> (abre a agenda em nova aba)</span>
+            </a>
           </div>
         </div>
       </div>

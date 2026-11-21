@@ -58,8 +58,8 @@ Resend (e-mail) · Anthropic (`@anthropic-ai/sdk`, IA do diagnóstico). Gerencia
 - `components/ui/works-wheel.jsx` (roda de cartões, usada no bloco de pilares): copiado de prompt externo, com um acréscimo
   nosso (modo controlado `progress`/`onRequest`: a rolagem da página gira a roda nos dois sentidos); não reformatar
 - `components/ui/3d-testimonials.jsx` + `content/depoimentos.js`: só depoimentos reais e autorizados; exemplos marcados `exemplo: true`
-- `components/ui/slide-confirm-button.jsx` + `components/landing/DeslizeCTA.jsx` (cores em `.ltb-deslize`): o arrasto leva à
-  demonstração; nunca diz que agendou enquanto a pré-triagem não existir
+- `components/ui/slide-confirm-button.jsx` + `components/landing/DeslizeCTA.jsx` (cores em `.ltb-deslize`): o arrasto abre a
+  agenda do Google em nova aba (`AGENDA_URL` em `content/contato.js`, a mesma de todos os botões de agendar); nunca diz que agendou
 
 ## Regras de negócio (nunca quebrar; cada uma tem teste)
 
