@@ -276,7 +276,7 @@ export default function CinematicHero() {
           {FRASES.map((f, i) => (
             <p key={f.linhas[0]} className={`ltb-frase absolute inset-x-0 -translate-y-1/2 ${i === 0 ? "ltb-frase-primeira" : ""}`}>
               {f.linhas.map((linha, j) => (
-                <span key={linha} className="ltb-linha block overflow-hidden pb-[0.1em]">
+                <span key={linha} className="ltb-linha -mb-[0.12em] block overflow-hidden pb-[0.22em]">
                   <span
                     className={`block font-ltb-titulo text-[clamp(2rem,5.4vw,5rem)] font-extrabold leading-[1.02] tracking-[-0.035em] ${
                       j === f.linhas.length - 1 ? "ltb-gradiente-texto" : ""
