@@ -49,7 +49,9 @@ Resposta `200`, array em `created_at DESC`:
 
 ## PATCH /api/leads (id no corpo) e PATCH /api/leads/:id
 
-Campos aceitos: `status_kanban`, `fornecedor_operacao`, `dados_precificacao`, `volume_real_mes`, `med_real_mes`.
+Campos aceitos: `status_kanban`, `fornecedor_operacao`, `dados_precificacao`, `volume_real_mes`, `med_real_mes`
+e `status_relacionamento` (modo do bot no contato do lead: `"pausado_humano"` ou `"ia_ativa"`; só o consultor troca,
+mensagem do cliente nunca reativa a IA). Todo lead devolvido pela API traz `status_relacionamento`.
 Qualquer outro campo é recusado com 400. Em `/api/leads/:id`, um `id` no corpo diferente do da URL também é recusado.
 
 ```json
@@ -65,6 +67,11 @@ PATCH /api/leads
 ```json
 PATCH /api/leads/1
 { "volume_real_mes": 152000.5, "med_real_mes": 0.35 }
+```
+
+```json
+PATCH /api/leads/1
+{ "status_relacionamento": "ia_ativa" }
 ```
 
 Resposta `200`: a oportunidade completa, já atualizada (mesmo formato da listagem).
@@ -162,6 +169,9 @@ POST /api/email/send
 
 Resposta `201`: `{ "success": true, "emailId": "re_123", "interacao": { "tipo": "email_enviado", "assunto": "...", "mensagem": "<p>Olá!</p>", "status_envio": "sucesso", "...": "..." } }`.
 Falha no Resend: `502 { "error": "O e-mail não foi enviado. Resend recusou o envio (HTTP 403): ...", "interacao": { "status_envio": "falha", ... } }`.
+
+Quando o WhatsApp vai para o mesmo número que conversa com o bot, a mensagem também entra em
+`mensagens_historico` com `role: "consultor"`: a IA passa a ver o que o consultor combinou.
 
 Se o envio sair mas o registro na linha do tempo falhar, a resposta é `500` com
 "... enviado, mas não foi registrado na linha do tempo. Não reenvie; avise o suporte."

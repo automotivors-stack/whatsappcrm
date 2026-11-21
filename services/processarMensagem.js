@@ -96,6 +96,14 @@ export async function processarEventoOpenWA(ctx, payload) {
   }
 
   const resposta = await ctx.agente({ db, telefone, chatId: msg.from, mensagem: conteudo });
+
+  // O consultor pode ter assumido a conversa enquanto a IA pensava: confere de novo antes de enviar.
+  const agora = await db.execute({
+    sql: "SELECT status_relacionamento FROM contatos WHERE phone_number = ?",
+    args: [telefone],
+  });
+  if (agora.rows[0]?.status_relacionamento === STATUS_PAUSADO) return { acao: "salvo_pausado" };
+
   if (resposta?.texto) {
     await ctx.enviar(msg.from, resposta.texto, { idempotencyKey: `resposta-${msg.id}`.slice(0, 255) });
     await db.execute({

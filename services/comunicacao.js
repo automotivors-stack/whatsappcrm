@@ -1,7 +1,7 @@
 // Disparos ativos do consultor a partir da Ficha 360°: WhatsApp (OpenWA) e e-mail (Resend).
 // Cada tentativa fica na linha do tempo (interacoes_cliente): status_envio 'sucesso' ou 'falha'.
 
-import { chatIdDoTelefone, mascarar, normalizarTelefoneBR } from "../lib/telefone.js";
+import { chatIdDoTelefone, mascarar, mesmoTelefone, normalizarTelefoneBR } from "../lib/telefone.js";
 import { htmlParaTexto } from "../lib/proposta.js";
 import { ErroLeads, validarId } from "./leads.js";
 
@@ -78,9 +78,18 @@ async function registrar(db, { oportunidadeId, tipo, destinatario, assunto = nul
 }
 
 /** Envio feito, registro falhou: avisa para o consultor NÃO reenviar. */
-async function registrarSucesso(db, dados, canal) {
+export const PAPEL_CONSULTOR = "consultor";
+
+async function registrarSucesso(db, dados, canal, { historico = null } = {}) {
   try {
-    return await registrar(db, { ...dados, status: "sucesso" });
+    const interacao = await registrar(db, { ...dados, status: "sucesso" });
+    if (historico) {
+      await db.execute({
+        sql: "INSERT INTO mensagens_historico (phone_number, role, content) VALUES (?, ?, ?)",
+        args: [historico, PAPEL_CONSULTOR, dados.mensagem],
+      });
+    }
+    return interacao;
   } catch (e) {
     console.error(`[comunicacao] ${canal} enviado, mas o registro falhou: ${e?.message ?? e}`);
     throw new ErroLeads(`${canal} enviado, mas não foi registrado na linha do tempo. Não reenvie; avise o suporte.`, 500);
@@ -113,7 +122,10 @@ export async function dispararWhatsApp(ctx, entrada) {
     const interacao = await registrar(ctx.db, { ...dados, status });
     throw new ErroLeads(texto, 502, { interacao });
   }
-  const interacao = await registrarSucesso(ctx.db, dados, "WhatsApp");
+  const interacao = await registrarSucesso(ctx.db, dados, "WhatsApp", {
+    // Mesmo chat da conversa com o bot: a IA passa a ver o que o consultor combinou.
+    historico: mesmoTelefone(telefone, oportunidade.phone_number) ? oportunidade.phone_number : null,
+  });
   return { success: true, messageId: resposta?.messageId ?? null, interacao };
 }
 

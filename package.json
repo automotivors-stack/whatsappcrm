@@ -11,6 +11,7 @@
     "test:db": "node --test tests/db.test.mjs"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "1.6.0",
     "@libsql/client": "0.18.0",
     "@tailwindcss/postcss": "4.3.5",
     "next": "16.4.5",

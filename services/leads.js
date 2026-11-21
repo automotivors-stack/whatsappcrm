@@ -15,7 +15,18 @@ export class ErroLeads extends Error {
 }
 
 export const FILTRO_SEM_PARCEIRO = "sem_parceiro";
-const CAMPOS_EDITAVEIS = ["status_kanban", "fornecedor_operacao", "dados_precificacao", "volume_real_mes", "med_real_mes"];
+const CAMPOS_EDITAVEIS = [
+  "status_kanban", "fornecedor_operacao", "dados_precificacao", "volume_real_mes", "med_real_mes", "status_relacionamento",
+];
+
+/** Modos do bot no contato. Só o consultor troca (pela ficha); mensagem do cliente nunca troca. */
+export const MODO_HUMANO = "pausado_humano";
+export const MODO_IA = "ia_ativa";
+const MODOS_BOT = [MODO_HUMANO, MODO_IA];
+
+// O card traz junto o modo do bot do contato (status_relacionamento fica em `contatos`).
+const SELECT_LEAD = `SELECT o.*, c.status_relacionamento
+  FROM oportunidades o LEFT JOIN contatos c ON c.phone_number = o.phone_number`;
 
 function paraObjeto(linha) {
   const lead = { ...linha };
@@ -37,14 +48,14 @@ export async function listarLeads(db, { status, fornecedor, busca } = {}) {
   const args = [];
   if (status) {
     if (!NOMES_FASES.includes(status)) throw new ErroLeads("Fase inválida.", 400);
-    where.push("status_kanban = ?");
+    where.push("o.status_kanban = ?");
     args.push(status);
   }
   if (fornecedor && fornecedor !== "todos") {
     if (fornecedor === FILTRO_SEM_PARCEIRO) {
-      where.push("fornecedor_operacao IS NULL");
+      where.push("o.fornecedor_operacao IS NULL");
     } else if (FORNECEDORES.includes(fornecedor)) {
-      where.push("fornecedor_operacao = ?");
+      where.push("o.fornecedor_operacao = ?");
       args.push(fornecedor);
     } else {
       throw new ErroLeads("Fornecedor inválido.", 400);
@@ -54,19 +65,19 @@ export async function listarLeads(db, { status, fornecedor, busca } = {}) {
   if (termo) {
     if (termo.length > TAMANHO_MAXIMO_BUSCA) throw new ErroLeads("Busca muito longa.", 400);
     const padrao = `%${escaparLike(termo)}%`;
-    const condicoes = ["nome_ou_razao_social LIKE ? ESCAPE '\\'", "documento LIKE ? ESCAPE '\\'"];
+    const condicoes = ["o.nome_ou_razao_social LIKE ? ESCAPE '\\'", "o.documento LIKE ? ESCAPE '\\'"];
     args.push(padrao, padrao);
     const digitos = termo.replace(/\D/g, "");
     // Só quando o termo parece documento (dígitos e . - /): "100%" não vira busca por dígitos.
     if (/^[\d.\-/\s]+$/.test(termo) && digitos.length >= 3) {
       // "12345678" encontra "12.345.678/0001-90"
-      condicoes.push("REPLACE(REPLACE(REPLACE(documento, '.', ''), '/', ''), '-', '') LIKE ?");
+      condicoes.push("REPLACE(REPLACE(REPLACE(o.documento, '.', ''), '/', ''), '-', '') LIKE ?");
       args.push(`%${digitos}%`);
     }
     where.push(`(${condicoes.join(" OR ")})`);
   }
   const { rows } = await db.execute({
-    sql: `SELECT * FROM oportunidades ${where.length ? `WHERE ${where.join(" AND ")}` : ""} ORDER BY created_at DESC, id DESC`,
+    sql: `${SELECT_LEAD} ${where.length ? `WHERE ${where.join(" AND ")}` : ""} ORDER BY o.created_at DESC, o.id DESC`,
     args,
   });
   return rows.map(paraObjeto);
@@ -88,7 +99,7 @@ export function validarId(valor) {
 }
 
 async function exigirOportunidade(db, id) {
-  const { rows } = await db.execute({ sql: "SELECT * FROM oportunidades WHERE id = ?", args: [id] });
+  const { rows } = await db.execute({ sql: `${SELECT_LEAD} WHERE o.id = ?`, args: [id] });
   if (!rows.length) throw new ErroLeads("Oportunidade não encontrada", 404);
   return paraObjeto(rows[0]);
 }
@@ -187,7 +198,7 @@ export async function atualizarLead(db, entrada) {
   const tx = await db.transaction("write");
   try {
     const { rows } = await tx.execute({
-      sql: "SELECT status_kanban, fornecedor_operacao, dados_precificacao FROM oportunidades WHERE id = ?",
+      sql: "SELECT status_kanban, fornecedor_operacao, dados_precificacao, phone_number FROM oportunidades WHERE id = ?",
       args: [id],
     });
     if (!rows.length) throw new ErroLeads("Oportunidade não encontrada", 404);
@@ -224,7 +235,17 @@ export async function atualizarLead(db, entrada) {
       args.push(numeroNaoNegativo(entrada.med_real_mes, "MED real do mês"));
     }
     await tx.execute({ sql: `UPDATE oportunidades SET ${sets.join(", ")} WHERE id = ?`, args: [...args, id] });
-    const final = await tx.execute({ sql: "SELECT * FROM oportunidades WHERE id = ?", args: [id] });
+    if (tem("status_relacionamento")) {
+      if (!MODOS_BOT.includes(entrada.status_relacionamento)) {
+        throw new ErroLeads(`Modo do bot inválido. Use ${MODOS_BOT.join(" ou ")}.`, 400);
+      }
+      if (!atual.phone_number) throw new ErroLeads("Este lead não tem WhatsApp vinculado ao bot.", 400);
+      await tx.execute({
+        sql: "UPDATE contatos SET status_relacionamento = ?, updated_at = CURRENT_TIMESTAMP WHERE phone_number = ?",
+        args: [entrada.status_relacionamento, atual.phone_number],
+      });
+    }
+    const final = await tx.execute({ sql: `${SELECT_LEAD} WHERE o.id = ?`, args: [id] });
     await tx.commit();
     return paraObjeto(final.rows[0]);
   } catch (erro) {

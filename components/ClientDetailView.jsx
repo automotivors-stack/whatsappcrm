@@ -167,6 +167,19 @@ export default function ClientDetailView({ leadId, faseDesejada, onFechar, onAtu
     }
   }
 
+  // Modo do bot: só o consultor troca, por aqui. Mensagem do cliente nunca reativa a IA.
+  const iaAtiva = lead?.status_relacionamento && lead.status_relacionamento !== "pausado_humano";
+  async function trocarModoBot() {
+    const novo = iaAtiva ? "pausado_humano" : "ia_ativa";
+    if (novo === "ia_ativa" && !window.confirm(
+      "A IA vai voltar a responder este cliente automaticamente no WhatsApp, em modo acompanhamento (sem negociar taxas). Continuar?",
+    )) return;
+    await salvar(
+      { status_relacionamento: novo },
+      novo === "ia_ativa" ? "IA reativada para este cliente." : "Bot pausado. Você está no atendimento.",
+    );
+  }
+
   async function trocarFase(fase) {
     if (fase === lead.status_kanban) return;
     if (exigeFornecedor(fase) && !lead.fornecedor_operacao) {
@@ -278,6 +291,21 @@ export default function ClientDetailView({ leadId, faseDesejada, onFechar, onAtu
                       {lead.status_kanban}
                     </span>
                   </div>
+                  {lead.phone_number && (
+                    <button
+                      type="button"
+                      disabled={salvando}
+                      onClick={trocarModoBot}
+                      aria-pressed={iaAtiva}
+                      title={iaAtiva ? "Clique para pausar a IA e atender você mesmo" : "Clique para a IA voltar a responder este cliente"}
+                      className={`mt-2 inline-flex items-center gap-2 rounded-md border px-2.5 py-1 text-sm font-medium disabled:opacity-50 ${
+                        iaAtiva ? "border-sky-300 bg-sky-50 text-sky-900" : "border-slate-300 bg-white text-slate-800"
+                      }`}
+                    >
+                      {iaAtiva ? "🤖 Bot ativo (IA respondendo)" : "👤 Modo humano (bot pausado)"}
+                      <span className="text-xs font-normal underline">{iaAtiva ? "pausar" : "reativar IA"}</span>
+                    </button>
+                  )}
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
                   {whatsapp && (
@@ -564,10 +592,15 @@ export default function ClientDetailView({ leadId, faseDesejada, onFechar, onAtu
                   <ol className="flex max-h-96 flex-col gap-2 overflow-y-auto pr-1">
                     {mensagens.map((m) => {
                       const doCliente = m.role === "user";
+                      const autor = { user: "Cliente", assistant: "IA", consultor: "Consultor" }[m.role] ?? m.role;
+                      const cor = {
+                        user: "bg-white border border-slate-200",
+                        consultor: "bg-sky-50 border border-sky-200",
+                      }[m.role] ?? "bg-emerald-50 border border-emerald-200";
                       return (
                         <li key={m.id} className={`flex ${doCliente ? "justify-start" : "justify-end"}`}>
-                          <div className={`max-w-[80%] rounded-lg px-3 py-2 text-sm ${doCliente ? "bg-white border border-slate-200 text-slate-800" : "bg-emerald-50 border border-emerald-200 text-slate-800"}`}>
-                            <p className="text-xs text-slate-500">{doCliente ? "Cliente" : "IA"} · {dataHora(m.created_at)}</p>
+                          <div className={`max-w-[80%] rounded-lg px-3 py-2 text-sm text-slate-800 ${cor}`}>
+                            <p className="text-xs text-slate-500">{autor} · {dataHora(m.created_at)}</p>
                             <p className="whitespace-pre-wrap break-words">{m.content}</p>
                           </div>
                         </li>
