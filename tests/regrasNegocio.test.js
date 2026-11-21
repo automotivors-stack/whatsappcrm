@@ -72,10 +72,16 @@ test("seed: 7 leads nas fases pedidas, 1 diagnóstico aguardando SIM, interaçõ
   for (const [id, cobrado] of Object.entries(l4.dados_precificacao.itens)) {
     assert.equal(Math.round((cobrado.percentual - itemDeCusto("Pushin Pay", id).percentual) * 100) / 100, 0.4, id);
   }
-  // Lead 5: Kluubpay, Pix custo R$ 1,50 cobrando R$ 3,00, volume R$ 150 mil, MED 0,3%
+  // Lead 5: Kluubpay, Pix in/out custo R$ 1,50 cobrando R$ 2,50, USDT, TPV R$ 180 mil, MED 0,2%
   const l5 = await leadDoSeed(5);
-  assert.deepEqual([l5.dados_precificacao.itens.pix_in.custo_base.fixo, l5.dados_precificacao.itens.pix_in.fixo], [1.5, 3]);
-  assert.deepEqual([l5.volume_real_mes, l5.med_real_mes], [150000, 0.3]);
+  for (const id of ["pix_in", "pix_out"]) {
+    assert.deepEqual([l5.dados_precificacao.itens[id].custo_base.fixo, l5.dados_precificacao.itens[id].fixo], [1.5, 2.5], id);
+  }
+  assert.ok(l5.dados_precificacao.itens.cripto_usdt);
+  assert.deepEqual([l5.volume_real_mes, l5.med_real_mes], [180000, 0.2]);
+  // Lead 6: TPV R$ 420 mil, MED 2,6% contra 1,0%
+  const l6 = await leadDoSeed(6);
+  assert.deepEqual([l6.volume_real_mes, l6.med_real_mes, l6.taxa_med_operacao], [420000, 2.6, "1,0%"]);
 
   // rodar de novo não duplica nada
   await semear(db);
@@ -83,7 +89,7 @@ test("seed: 7 leads nas fases pedidas, 1 diagnóstico aguardando SIM, interaçõ
   seed = await semear(db);
 });
 
-test("Teste A (idempotência): o mesmo messageId no webhook não duplica eventos nem oportunidades", async () => {
+test("Teste 1 (deduplicação do webhook): o mesmo messageId no webhook não duplica eventos nem oportunidades", async () => {
   const lead = "5500900009999";
   const ev = mensagem("wamid.homolog.lead", lead, "Oi, quero taxas melhores");
   assert.equal((await entregarWebhook(ev)).status, 200);
@@ -101,7 +107,7 @@ test("Teste A (idempotência): o mesmo messageId no webhook não duplica eventos
   assert.equal(await contar("SELECT COUNT(*) n FROM aprovacoes_pendentes WHERE id = ? AND status = 'aprovado'", [seed.pendenciaId]), 1);
 });
 
-test("Teste B (trava de fornecedor): PATCH para 'Aprovado' sem fornecedor responde HTTP 400", async () => {
+test("Teste 2 (governança de fornecedor): PATCH para 'Aprovado' sem fornecedor responde HTTP 400", async () => {
   const patch = (id, corpo) => rotaLead.PATCH(
     new Request("http://x", { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify(corpo) }),
     { params: Promise.resolve({ id: String(id) }) },
@@ -127,7 +133,7 @@ test("Teste B (trava de fornecedor): PATCH para 'Aprovado' sem fornecedor respon
   await patch(seed.leads[1], { status_kanban: "Contato Recebido", fornecedor_operacao: null }); // volta ao seed
 });
 
-test("Teste C (sigilo do spread): a proposta mostra só a taxa do cliente, nunca custo base nem margem", async () => {
+test("Teste 3 (sigilo do spread): a proposta mostra só a taxa do cliente, nunca custo base nem margem", async () => {
   for (const n of [4, 5, 6, 7]) {
     const lead = await leadDoSeed(n);
     for (const canal of ["whatsapp", "email"]) {
@@ -148,13 +154,14 @@ test("Teste C (sigilo do spread): a proposta mostra só a taxa do cliente, nunca
       assert.ok(!/custo|spread|margem|lucro|p\.p\./i.test(texto), `${n}/${canal}: termo interno no texto`);
     }
   }
-  // exemplo concreto: Kluubpay cobra R$ 3,00 no Pix, custo R$ 1,50 não aparece
+  // exemplo concreto: Kluubpay cobra R$ 2,50 no Pix in/out, custo R$ 1,50 não aparece
   const { texto } = montarProposta(await leadDoSeed(5), "whatsapp");
-  assert.match(texto, /Pix In: R\$\s3,00/);
+  assert.match(texto, /Pix In: R\$\s2,50/);
+  assert.match(texto, /Pix Out \(saque\): R\$\s2,50/);
   assert.ok(!/1,50/.test(texto));
 });
 
-test("Teste D (transbordo humano): contato em 'pausado_humano' não recebe resposta da IA", async () => {
+test("Teste 4 (transbordo humano): contato em 'pausado_humano' não recebe resposta da IA", async () => {
   const telefone = `${PREFIXO_TELEFONE_DEMO}0002`; // Lead 2, pausado pelo seed
   const contato = (await db.execute({ sql: "SELECT status_relacionamento FROM contatos WHERE phone_number = ?", args: [telefone] })).rows[0];
   assert.equal(contato.status_relacionamento, "pausado_humano");
@@ -174,26 +181,28 @@ test("Teste D (transbordo humano): contato em 'pausado_humano' não recebe respo
   await db.execute({ sql: "UPDATE contatos SET status_relacionamento = 'pausado_humano' WHERE phone_number = ?", args: [telefone] });
 });
 
-test("Teste E (dashboard): TPV, cliente com MED estourado e % da meta de R$ 25.000", async () => {
+test("Teste 5 (dashboard): TPV, cliente com MED estourado e % da meta de R$ 25.000", async () => {
   const r = await rotaMetricas.GET(new Request("http://x/api/dashboard/metrics?periodo=tudo"));
   assert.equal(r.status, 200);
   const m = await r.json();
-  // Operando: Lead 5 (150 mil) + Lead 6 (450 mil); Expectativas: Lead 7 (1,2 milhão)
+  // Operando: Lead 5 (180 mil) + Lead 6 (420 mil); Expectativas: Lead 7 (1,2 milhão)
   assert.equal(m.operacao.contas_em_operacao, 3);
   assert.equal(m.operacao.tpv, 1800000);
   // Lucro: 1.500 + 1.800 + 9.600 = 12.900 → 51,6% da meta
   assert.equal(m.lucro.realizado, 12900);
   assert.equal(m.lucro.meta, 25000);
   assert.equal(m.lucro.progresso, 0.516);
-  // Só o Lead 6 estourou o MED (2,8% contra 1,0% declarado)
+  // Só o Lead 6 estourou o MED (2,6% contra 1,0% declarado)
   assert.deepEqual(m.alertas_med, [seed.leads[6]]);
   const l6 = m.contas.find((c) => c.id === seed.leads[6]);
-  assert.deepEqual([l6.med_real, l6.med_teto, l6.med_status], [2.8, 1, "acima"]);
+  assert.deepEqual([l6.med_real, l6.med_teto, l6.med_status], [2.6, 1, "acima"]);
   assert.equal(m.contas.find((c) => c.id === seed.leads[5]).med_status, "dentro");
   assert.equal(m.contas.find((c) => c.id === seed.leads[7]).med_status, "dentro");
   // Carteira por parceiro
   const pushin = m.carteira.parceiros.find((p) => p.fornecedor === "Pushin Pay");
-  assert.equal(pushin.volume, 1650000);
+  assert.equal(pushin.volume, 1620000); // Lead 6 (420 mil) + Lead 7 (1,2 milhão)
+  const kluub = m.carteira.parceiros.find((p) => p.fornecedor === "Kluubpay");
+  assert.equal(kluub.volume, 180000);
   // período inválido
   assert.equal((await rotaMetricas.GET(new Request("http://x/api/dashboard/metrics?periodo=ano"))).status, 400);
 });

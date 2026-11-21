@@ -32,16 +32,16 @@ export const LEADS_DEMO = [
     ],
   },
   {
-    n: 2, nome: "[EXEMPLO] Ana Souza Doces", fase: "Interessado", fornecedor: null,
-    tipo: "PF", documento: "123.456.789-09", negocio: "Confeitaria por encomenda no Instagram", ondeOpera: "Link de pagamento do Mercado Pago",
-    volume: "R$ 18 mil", transacoes: 220, taxas: "Pix 0,99%", med: "Não informado / A apurar", limiteVenda: "R$ 800",
-    limiteSaque: "Não informado / A apurar", saqueTerceiros: null, metodos: "Pix", integracao: "Link de pagamento",
-    resumo: "Confeiteira PF que vende pelo Instagram, R$ 18 mil/mês quase todo em Pix. Pediu proposta de Pix mais barato.",
+    n: 2, nome: "[EXEMPLO] Academia Digital Cursos Ltda", fase: "Interessado", fornecedor: null,
+    tipo: "PJ", documento: "66.777.888/0001-99", negocio: "Infoprodutos: cursos e mentorias online", ondeOpera: "Hotmart e Kiwify",
+    volume: "R$ 80 mil", transacoes: 600, taxas: "Pix 0,99%, cartão 4,9%", med: "Não informado / A apurar", limiteVenda: "R$ 2 mil",
+    limiteSaque: "Não informado / A apurar", saqueTerceiros: null, metodos: "Pix e cartão", integracao: "Checkout pronto",
+    resumo: "Produtora de infoprodutos, R$ 80 mil/mês entre Pix e cartão. Em qualificação: falta confirmar MED e limite de saque.",
     conversa: [
-      ["user", "Boa tarde, quanto vocês cobram no Pix?"],
-      ["assistant", "Boa tarde! O consultor apresenta a proposta depois de entender sua operação. Quanto você vende por mês, mais ou menos?"],
-      ["user", "Uns 18 mil, quase tudo Pix."],
-      ["consultor", "Oi Ana, aqui é o consultor. Vou te mandar uma proposta de Pix ainda hoje."],
+      ["user", "Boa tarde! Vendo cursos online e quero sair da Hotmart pra pagar menos taxa."],
+      ["assistant", "Boa tarde! Vamos entender sua operação. Quanto você vende por mês, mais ou menos?"],
+      ["user", "Uns 80 mil, metade Pix metade cartão."],
+      ["consultor", "Oi, aqui é o consultor. Vou te mandar uma proposta ainda hoje."],
       ["user", "Combinado, fico no aguardo!"],
     ],
   },
@@ -72,20 +72,21 @@ export const LEADS_DEMO = [
     conversa: [["consultor", "Conta aprovada na Pushin Pay! Segue a proposta de Pix."]],
   },
   {
-    n: 5, nome: "[EXEMPLO] Info Cursos Online", fase: "Operando", fornecedor: KLUUBPAY,
-    tipo: "PJ", documento: "11.222.333/0001-44", negocio: "Infoprodutos e cursos online", ondeOpera: "Hotmart",
-    volume: "R$ 150 mil", transacoes: 1000, taxas: "Pix R$ 2,50", med: "0,5%", limiteVenda: "R$ 5 mil",
+    n: 5, nome: "[EXEMPLO] NuvemFlow SaaS e Cripto", fase: "Operando", fornecedor: KLUUBPAY,
+    tipo: "PJ", documento: "11.222.333/0001-44", negocio: "SaaS de assinaturas com recebimento em cripto", ondeOpera: "Asaas",
+    volume: "R$ 200 mil", transacoes: 1200, taxas: "Pix R$ 2,90", med: "0,5%", limiteVenda: "R$ 5 mil",
     limiteSaque: "R$ 30 mil", saqueTerceiros: true, metodos: "Pix e cripto USDT", integracao: "API",
-    resumo: "Produtor digital, R$ 150 mil/mês em Pix e parte em USDT. Operando na Kluubpay com MED saudável.",
+    resumo: "SaaS de assinaturas, R$ 200 mil/mês declarados em Pix e parte em USDT. Operando na Kluubpay com MED controlado.",
     precificacao: {
       fornecedor: KLUUBPAY,
       valor_referencia: 150,
       itens: {
-        pix_in: { percentual: 0, fixo: 3.0 }, // custo R$ 1,50
+        pix_in: { percentual: 0, fixo: 2.5 }, // custo R$ 1,50
+        pix_out: { percentual: 0, fixo: 2.5 }, // custo R$ 1,50
         cripto_usdt: { percentual: 4.5, fixo: 3.5 }, // custo 3,50% + R$ 2,50
       },
     },
-    operacao: { volumeReal: 150000, medReal: 0.3, lucro: 1500 },
+    operacao: { volumeReal: 180000, medReal: 0.2, lucro: 1500 },
     conversa: [["user", "Primeiras liquidações caíram certinho, obrigado!"]],
   },
   {
@@ -99,7 +100,7 @@ export const LEADS_DEMO = [
       valor_referencia: 250,
       itens: { pix_in_f2: { percentual: 1.1, fixo: 0.35 }, credito_d30_1x: { percentual: 4.9, fixo: 0.5 } },
     },
-    operacao: { volumeReal: 450000, medReal: 2.8, lucro: 1800 },
+    operacao: { volumeReal: 420000, medReal: 2.6, lucro: 1800 },
     conversa: [["user", "Tivemos umas contestações de Pix essa semana, é normal?"]],
   },
   {
@@ -144,7 +145,7 @@ const INTERACOES_DEMO = [
   [4, "whatsapp_enviado", "Conta aprovada na Pushin Pay! Segue a proposta de Pix.", null, "sucesso"],
   [5, "whatsapp_enviado", "Integração concluída, primeiras liquidações confirmadas.", null, "sucesso"],
   [6, "whatsapp_enviado", "Identificamos MED acima do esperado. Podemos conversar hoje?", null, "falha"],
-  [6, "email_enviado", "<p>Alerta: MED de 2,8% no mês, acima do teto de 1,0% declarado.</p>", "Alerta de MED", "sucesso"],
+  [6, "email_enviado", "<p>Alerta: MED de 2,6% no mês, acima do teto de 1,0% declarado.</p>", "Alerta de MED", "sucesso"],
   [7, "email_enviado", "<p>Relatório mensal: volume 9% acima do prometido.</p>", "Relatório mensal", "sucesso"],
 ];
 
