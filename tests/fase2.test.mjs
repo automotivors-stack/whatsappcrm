@@ -26,9 +26,11 @@ const ESPERADO = {
   [PUSHIN_PAY]: [
     ["pix_in_f1", 0, 0.35], ["pix_in_f2", 0.7, 0.35], ["pix_in_f3", 0.9, 0.35],
     ["pix_out", 0, 1.2], ["boleto", 0, 2.0],
-    ["credito_d30_1x", 4.18, 0.35], ["credito_d30_2a6", 4.26, 0.35], ["credito_d30_7a18", 4.45, 0.35],
+    // R$ 0,35 POR PARCELA: fixo da venda em Nx = 0,35 × N
+    ...[4.18, 4.26, 4.26, 4.26, 4.26, 4.26, 4.45, 4.45, 4.45, 4.45, 4.45, 4.45, 4.45, 4.45, 4.45, 4.45, 4.45, 4.45]
+      .map((pct, i) => [`credito_d30_${i + 1}x`, pct, Math.round(0.35 * (i + 1) * 100) / 100]),
     ...[5.45, 6.16, 6.8, 7.43, 8.07, 8.7, 9.53, 10.16, 10.8, 11.43, 12.07, 12.7, 13.34, 13.97, 14.61, 15.24, 15.88, 16.51]
-      .map((pct, i) => [`credito_d1_${i + 1}x`, pct, 0.35]),
+      .map((pct, i) => [`credito_d1_${i + 1}x`, pct, Math.round(0.35 * (i + 1) * 100) / 100]),
     ["debito", 4.52, 0.35],
   ],
   [KLUUBPAY]: [
@@ -66,8 +68,10 @@ test("spread = taxa negociada − custo base", () => {
   assert.equal(calcularSpread(itemDeCusto(PUSHIN_PAY, "pix_out"), { fixo: 1 }).fixo, -0.2);
   // custo não informado: sem spread (não inventa)
   assert.equal(calcularSpread({ ...itemDeCusto(PUSHIN_PAY, "credito_d1_2x"), percentual: null }, { percentual: 10, fixo: 1 }), null);
-  // D+1 em 12x: custo 12,70% + R$ 0,35; cobrando 14,90% + R$ 0,50 → +2,2 p.p. e +R$ 0,15
-  assert.deepEqual(calcularSpread(itemDeCusto(PUSHIN_PAY, "credito_d1_12x"), { percentual: 14.9, fixo: 0.5 }), { pontosPercentuais: 2.2, fixo: 0.15, porTransacao: null });
+  // D+1 em 12x: custo 12,70% + R$ 4,20 (0,35 × 12); cobrando 14,90% + R$ 4,50 → +2,2 p.p. e +R$ 0,30
+  assert.deepEqual(calcularSpread(itemDeCusto(PUSHIN_PAY, "credito_d1_12x"), { percentual: 14.9, fixo: 4.5 }), { pontosPercentuais: 2.2, fixo: 0.3, porTransacao: null });
+  // cobrar só R$ 0,50 fixo numa venda em 12x dá prejuízo no fixo
+  assert.equal(calcularSpread(itemDeCusto(PUSHIN_PAY, "credito_d1_12x"), { percentual: 14.9, fixo: 0.5 }).fixo, -3.7);
   // nada cobrado: sem spread
   assert.equal(calcularSpread(pixF2, {}), null);
   // US$ não usa o valor de referência em reais
@@ -181,7 +185,10 @@ test("proxy: sem credenciais configuradas bloqueia; com senha certa libera", () 
 test("tabela revisada: D+1 da Pushin Pay completo, sem custo pendente em nenhum fornecedor", () => {
   const d1 = TABELAS_CUSTO[PUSHIN_PAY].filter((i) => i.id.startsWith("credito_d1_"));
   assert.equal(d1.length, 18);
-  assert.ok(d1.every((i) => i.liquidacao === "D+1" && i.fixo === 0.35));
+  assert.ok(d1.every((i) => i.liquidacao === "D+1" && i.fixo === Math.round(0.35 * i.parcelas * 100) / 100));
+  assert.equal(itemDeCusto(PUSHIN_PAY, "credito_d30_18x").fixo, 6.3);
+  assert.equal(itemDeCusto(PUSHIN_PAY, "debito").fixo, 0.35);
+  assert.equal(itemDeCusto(PUSHIN_PAY, "credito_d30_2a6"), null);
   for (const tabela of Object.values(TABELAS_CUSTO)) {
     assert.ok(tabela.every((i) => i.percentual !== null && i.fixo !== null), "nenhum custo null");
   }

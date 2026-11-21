@@ -418,7 +418,7 @@ export default function ClientDetailView({ leadId, faseDesejada, onFechar, onAtu
                         />
                       </label>
                       <p className="max-w-md text-xs text-slate-500">
-                        Opcional. Com ele, o spread também aparece em reais por transação. Tabela de custo de {rotuloVersaoTabela(VERSAO_TABELA_CUSTOS)}.
+                        Opcional. Com ele, o spread também aparece em reais por transação. Valores fixos são por venda (no cartão parcelado, o custo já soma o fixo de cada parcela). Tabela de custo de {rotuloVersaoTabela(VERSAO_TABELA_CUSTOS)}.
                       </p>
                     </div>
                     {versaoAntiga && (
