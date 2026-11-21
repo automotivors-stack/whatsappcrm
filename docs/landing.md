@@ -23,7 +23,7 @@
   convertido para .jsx só sem os tipos; não reformatar). Dados em `content/depoimentos.js`.
 - **Só depoimentos reais, com autorização por escrito** (nome, cargo, empresa, foto, texto e qualquer número citado).
   Nada inventado: depoimento falso é publicidade enganosa (CDC art. 37; Código do CONAR).
-- Hoje: 30 depoimentos FICTÍCIOS enviados pelo time só para demonstração (21/11/2026), sem fotos, cada cartão marcado "fictício" e o bloco com aviso de demonstração. Trocar pelos reais antes de ir ao ar. A demo do prompt (`/3d-testimonials`, com
+- Hoje: 30 depoimentos FICTÍCIOS enviados pelo time só para demonstração (21/11/2026), sem fotos, sem a palavra "fictício" nos cartões (pedido do time), e o bloco com aviso de demonstração, que não pode sair enquanto houver item fictício. Trocar pelos reais antes de ir ao ar. A demo do prompt (`/3d-testimonials`, com
   nomes fictícios e fotos do Unsplash) não foi criada.
 
 ## Segurança
