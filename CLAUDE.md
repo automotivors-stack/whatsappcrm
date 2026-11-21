@@ -38,6 +38,9 @@ Resend (e-mail) · Anthropic (`@anthropic-ai/sdk`, IA do diagnóstico). Gerencia
 - `npm run verificar -- <ambiente|banco|whatsapp|email <destino>|ia|webhook <url>>` — testa os serviços reais
 - Variáveis: `.env.example`. Scripts leem `.env` e `.env.local` (o `.env.local` prevalece; variáveis do terminal valem mais).
 - Homologação com serviços reais: `docs/roteiro-homologacao.md`. API: `docs/api-leads.md`.
+- Produção: CRM na **Vercel**, OpenWA em VPS, Turso de produção separado — `docs/deploy.md`. A rota do webhook tem
+  `maxDuration = 60`; os tempos da IA e do OpenWA (`configAgente`, `timeoutOpenWA`) cabem nisso e
+  `tests/orcamento.test.js` confere. Mudou um, ajuste o outro.
 
 ## Mapa do código
 

@@ -13,7 +13,20 @@ import { CAMPOS_DIAGNOSTICO, limparDiagnostico } from "./aprovacao.js";
 // Sonnet: mais rápido e mais barato para triagem no WhatsApp. Troque com AGENTE_MODELO.
 export const MODELO_PADRAO = "claude-sonnet-5-5";
 const LIMITE_HISTORICO = 40; // últimas mensagens enviadas ao modelo
-const TEMPO_LIMITE_MS = 60_000;
+
+/**
+ * Tempo da chamada à IA. Padrões pensados para caber, com o resto do processamento, nos 60 s da
+ * rota do webhook na Vercel (maxDuration): 18 s por tentativa + 1 nova tentativa.
+ * Em VPS (sem limite) ou plano com mais tempo, aumente AGENTE_TIMEOUT_MS / AGENTE_TENTATIVAS_EXTRAS.
+ */
+export function configAgente(env = process.env) {
+  const timeout = Number(env.AGENTE_TIMEOUT_MS);
+  const extras = Number(env.AGENTE_TENTATIVAS_EXTRAS);
+  return {
+    timeoutMs: Number.isFinite(timeout) && timeout >= 1000 ? timeout : 18_000,
+    tentativasExtras: Number.isInteger(extras) && extras >= 0 && extras <= 5 ? extras : 1,
+  };
+}
 
 /** Os 14 pontos, com o rótulo usado na conversa e no prompt. */
 export const PONTOS_DIAGNOSTICO = [
@@ -143,7 +156,8 @@ export function montarEntrada({ historico, dados, faltando, secundarios = [], mo
 
 let clientePadrao = null;
 function cliente() {
-  clientePadrao ??= new Anthropic({ timeout: TEMPO_LIMITE_MS, maxRetries: 2 });
+  const { timeoutMs, tentativasExtras } = configAgente();
+  clientePadrao ??= new Anthropic({ timeout: timeoutMs, maxRetries: tentativasExtras });
   return clientePadrao;
 }
 

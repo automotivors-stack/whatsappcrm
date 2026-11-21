@@ -10,6 +10,10 @@ import { contextoPadrao, processarEventoOpenWA } from "../../../../services/proc
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+// Vercel: o trabalho depois do 200 (`after`) conta dentro deste limite. 60 s cabe em todos os planos;
+// os tempos da IA e do OpenWA (configAgente, timeoutOpenWA) foram dimensionados para caber aqui.
+// Se o seu plano permitir mais, aumente este valor e os tempos juntos (tests/orcamento.test.js confere).
+export const maxDuration = 60;
 
 export async function POST(request) {
   return receberWebhook(request, {

@@ -12,7 +12,11 @@ export class FalhaWhatsApp extends Error {
 }
 
 const LIMITE_TEXTO = 4096; // limite do campo `text` no OpenWA
-const TEMPO_LIMITE_MS = 15_000;
+/** Tempo máximo de um envio ao OpenWA (OPENWA_TIMEOUT_MS, padrão 8 s: cabe no orçamento do webhook na Vercel). */
+export function timeoutOpenWA(env = process.env) {
+  const v = Number(env.OPENWA_TIMEOUT_MS);
+  return Number.isFinite(v) && v >= 1000 ? v : 8_000;
+}
 
 /**
  * Envia um texto para um chat do WhatsApp.
@@ -47,7 +51,7 @@ export async function enviarMensagemWhatsApp(chatId, texto, opcoes = {}) {
     method: "POST",
     headers,
     body: JSON.stringify({ chatId, text }),
-    signal: AbortSignal.timeout(TEMPO_LIMITE_MS),
+    signal: AbortSignal.timeout(timeoutOpenWA()),
   });
 
   if (!resposta.ok) {
