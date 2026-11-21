@@ -65,7 +65,7 @@ const ITENS = PILARES.map((p, i) => ({
 }));
 
 // Quanto de rolagem (em alturas de tela) cada passo da roda ocupa: anel → Talento → … → Inteligência.
-const ROLAGEM_POR_PASSO = 0.45;
+const ROLAGEM_POR_PASSO = 0.3;
 
 /** Segura a roda em cada peça e só gira no meio do trecho: a peça fica parada para leitura antes de a próxima vir. */
 function comPausas(bruto) {
@@ -80,6 +80,7 @@ export default function PilaresRoda() {
   // A roda acompanha a rolagem da página nos dois sentidos: descendo, o anel abre e os pilares avançam; subindo, voltam.
   // A seção é alta e a roda fica fixa (sticky) enquanto a página passa por ela; nada prende a rolagem, no celular também.
   const secao = useRef(null);
+  const palco = useRef(null); // a parte fixa (sticky): a tela inteira no desktop, 600 px no celular
   const [progresso, setProgresso] = useState(0);
   const passos = ITENS.length; // 0 = anel, 1..4 = cada pilar na frente
 
@@ -89,7 +90,7 @@ export default function PilaresRoda() {
       quadro = 0;
       const el = secao.current;
       if (!el) return;
-      const total = el.offsetHeight - window.innerHeight;
+      const total = el.offsetHeight - (palco.current?.offsetHeight || window.innerHeight);
       const p = total > 0 ? Math.min(1, Math.max(0, -el.getBoundingClientRect().top / total)) : 0;
       setProgresso(comPausas(p * passos));
     };
@@ -111,7 +112,7 @@ export default function PilaresRoda() {
     (passo) => {
       const el = secao.current;
       if (!el) return;
-      const total = el.offsetHeight - window.innerHeight;
+      const total = el.offsetHeight - (palco.current?.offsetHeight || window.innerHeight);
       const topo = el.getBoundingClientRect().top + window.scrollY;
       const reduzido = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
       window.scrollTo({ top: topo + (passo / passos) * total, behavior: reduzido ? "auto" : "smooth" });
@@ -125,8 +126,8 @@ export default function PilaresRoda() {
         Talento abre caminhos. Persistência move. Organização dá direção. Inteligência acelera.
       </h2>
       {/* o trilho: alto, com a roda fixa enquanto a página passa por ele */}
-      <div ref={secao} className="relative" style={{ height: `${100 + passos * ROLAGEM_POR_PASSO * 100}svh` }}>
-      <div className="sticky top-0 h-[100svh] pt-16">
+      <div ref={secao} className="ltb-trilho-pilares relative" style={{ height: `calc(var(--ltb-palco) + ${passos * ROLAGEM_POR_PASSO * 100}svh)` }}>
+      <div ref={palco} className="sticky top-0 pt-16" style={{ height: "var(--ltb-palco)" }}>
         <WorksWheel
           items={ITENS}
           label="Let’s Touch Base."

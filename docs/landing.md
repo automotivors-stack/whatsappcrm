@@ -12,7 +12,7 @@
 - As quatro frases (Talento abre caminhos, Persistência move, Organização dá direção, Inteligência acelera) são cartões
   em SVG gerados no próprio componente: nada em `/public` (ficaria atrás da senha do `proxy.js`) e nada externo.
 - Cores e fonte da marca entram pelas props (`style` com as variáveis `--ww-*`), sem mexer no componente.
-- A roda acompanha a rolagem da página nos dois sentidos (seção alta com a roda fixa; 0,45 tela de rolagem por passo,
+- A roda acompanha a rolagem da página nos dois sentidos (seção alta com a roda fixa; 0,3 tela de rolagem por passo; o palco fixo tem a tela inteira no desktop e 600 px no celular, `--ltb-palco` em globals.css,
   com pausa curta em cada pilar). No celular o cartão vai até metade da largura (`cardMaxWidth`, outro acréscimo nosso
   ao componente) e o nome ao lado do cartão some (o cartão e a lista já dizem o pilar). Para isso o componente ganhou o modo controlado (`progress`/`onRequest`), marcado no código;
   sem `progress` ele funciona como o original. Lista, setas e clique num cartão rolam a página até o pilar.

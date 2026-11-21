@@ -173,3 +173,10 @@ body {
 @media (max-width: 639px) {
   .ww-root.ltb-pilares .ww-title { display: none; }
 }
+
+/* Altura do palco da roda dos pilares: a tela inteira no desktop; no celular, só o que a roda ocupa (sem vazio em
+   cima e embaixo). O trilho soma a isso o trecho de rolagem de cada pilar (PilaresRoda.jsx). */
+.ltb-trilho-pilares { --ltb-palco: 100svh; }
+@media (max-width: 639px) {
+  .ltb-trilho-pilares { --ltb-palco: 600px; }
+}
