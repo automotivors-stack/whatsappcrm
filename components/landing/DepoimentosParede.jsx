@@ -3,6 +3,7 @@
 // Cores da marca pelas variáveis --t3d-* (style), sem mexer no componente.
 
 import { Testimonials3D } from "../ui/3d-testimonials.jsx";
+import DeslizeCTA from "./DeslizeCTA.jsx";
 import { DEPOIMENTOS } from "../../content/depoimentos.js";
 
 export default function DepoimentosParede() {
@@ -40,6 +41,9 @@ export default function DepoimentosParede() {
             "--t3d-ring": "rgba(96, 165, 250, 0.7)",
           }}
         />
+        <div className="mt-24">
+          <DeslizeCTA rotulo="Quero ver na prática" />
+        </div>
       </div>
     </section>
   );

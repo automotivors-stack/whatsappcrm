@@ -5,6 +5,7 @@
 // Conteúdo ilustrativo (situações comuns), sem números de resultado.
 
 import { useEffect, useRef } from "react";
+import DeslizeCTA from "./DeslizeCTA.jsx";
 
 const PECAS = [
   { tipo: "conversa", texto: "Oi! Ainda vale aquela proposta?", dor: "Conversas dispersas" },
@@ -103,6 +104,10 @@ export default function ProblemaNarrativa() {
             O que define uma estratégia de sucesso é a organização, a comunicação e a inteligência em cada interação.
           </span>
         </p>
+
+        <div className="mt-24">
+          <DeslizeCTA rotulo="Quero organizar" alinhamento="esquerda" fundo="claro" />
+        </div>
       </div>
     </section>
   );

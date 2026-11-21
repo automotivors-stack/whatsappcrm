@@ -7,6 +7,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { WorksWheel } from "../ui/works-wheel.jsx";
+import DeslizeCTA from "./DeslizeCTA.jsx";
 
 const PILARES = [
   { titulo: "Talento", resto: "abre caminhos.", cor: ["#60a5fa", "#2563eb"] },
@@ -118,15 +119,12 @@ export default function PilaresRoda() {
   );
 
   return (
-    <section
-      ref={secao}
-      aria-labelledby="pilares-titulo"
-      className="relative bg-ltb-navy-deep"
-      style={{ height: `${100 + passos * ROLAGEM_POR_PASSO * 100}svh` }}
-    >
+    <section aria-labelledby="pilares-titulo" className="relative bg-ltb-navy-deep">
       <h2 id="pilares-titulo" className="sr-only">
         Talento abre caminhos. Persistência move. Organização dá direção. Inteligência acelera.
       </h2>
+      {/* o trilho: alto, com a roda fixa enquanto a página passa por ele */}
+      <div ref={secao} className="relative" style={{ height: `${100 + passos * ROLAGEM_POR_PASSO * 100}svh` }}>
       <div className="sticky top-0 h-[100svh] pt-16">
         <WorksWheel
           items={ITENS}
@@ -144,6 +142,10 @@ export default function PilaresRoda() {
             fontFamily: '"Manrope Variable", "Inter Variable", system-ui, Arial, sans-serif',
           }}
         />
+      </div>
+      </div>
+      <div className="px-5 pb-24 pt-20 sm:px-10">
+        <DeslizeCTA rotulo="Agendar conversa" />
       </div>
     </section>
   );

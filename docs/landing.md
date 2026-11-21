@@ -26,6 +26,16 @@
 - Hoje: 30 depoimentos FICTÍCIOS enviados pelo time só para demonstração (21/11/2026), sem fotos, sem a palavra "fictício" nos cartões (pedido do time), e o bloco com aviso de demonstração, que não pode sair enquanto houver item fictício. Trocar pelos reais antes de ir ao ar. A demo do prompt (`/3d-testimonials`, com
   nomes fictícios e fotos do Unsplash) não foi criada.
 
+## Botão de arrastar no fim dos blocos
+- `components/ui/slide-confirm-button.jsx` (Slide Confirm Button, ProfitizeBuild, convertido para .jsx só sem os tipos;
+  não reformatar) e `components/landing/DeslizeCTA.jsx`, com a identidade da marca pela classe `ltb-deslize` em
+  `app/globals.css` (pílula navy, puxador Electric Blue, fonte Inter).
+- No fim de "O problema" (Quero organizar), dos pilares (Agendar conversa) e dos depoimentos (Quero ver na prática).
+- O agendamento ainda não existe (etapa 2): completar o arrasto não marca nada; o balão diz "Levando você à
+  demonstração" e a página rola até `#demonstracao`. Quando a pré-triagem existir, o `onConfirm` passa a abrir o
+  formulário, e só confirma depois de gravar o pedido.
+- A demo do prompt (`/slide-confirm-button`, marca fictícia Vozi) não foi criada.
+
 ## Segurança
 - Rota pública só `GET`/`HEAD /` (`ROTAS_PUBLICAS` em `proxy.js`); o restante do CRM segue com HTTP Basic.
 - A landing não importa serviços, banco nem variáveis de ambiente do servidor.

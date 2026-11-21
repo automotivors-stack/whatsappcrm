@@ -147,3 +147,23 @@ body {
 .ltb-hero[data-estado="inicial"] .ltb-frases-estaticas {
   position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; display: block;
 }
+
+/* Botão de arrastar com a identidade da marca (components/landing/DeslizeCTA.jsx). Seletor com [data-tone] para vencer
+   os tons do componente sem mexer nele. Ação primária em Electric Blue (verde nunca é ação primária). */
+.scb.ltb-deslize[data-tone] {
+  --scb-h: 72px;
+  --scb-track: #0b1f44;
+  --scb-track-hi: #1d3a7a;
+  --scb-track-lo: #050d1f;
+  --scb-text: #cbd5e1;
+  --scb-text-hi: #ffffff;
+  --scb-a: #1d4ed8;
+  --scb-b: #2563eb;
+  --scb-c: #60a5fa;
+  --scb-ink: #f8fafc;
+  --scb-glow: rgba(37, 99, 235, 0.55);
+  --scb-ring: #3b82f6;
+  --scb-bubble: #dbeafe;
+  --scb-bubble-ink: #0b1f44;
+  font-family: var(--font-ltb-texto);
+}
