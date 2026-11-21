@@ -56,7 +56,7 @@ Resend (e-mail) · Anthropic (`@anthropic-ai/sdk`, IA do diagnóstico). Gerencia
 - Landing pública: `app/(site)/page.jsx` + `components/landing/` (hero WebGL em `tunel.js`, GSAP/ScrollTrigger,
   modo estático para `prefers-reduced-motion` e sem JS). Não lê banco nem dados do CRM. Plano: `docs/landing.md`
 - `components/ui/works-wheel.jsx` (roda de cartões, usada no bloco de pilares): copiado de prompt externo, com um acréscimo
-  nosso (modo controlado `progress`/`onRequest`: a rolagem da página gira a roda nos dois sentidos); não reformatar
+  nosso (modo controlado `progress`/`onRequest`: a rolagem da página gira a roda nos dois sentidos; e `cardMaxWidth`); não reformatar
 - `components/ui/3d-testimonials.jsx` + `content/operacao.js`: frases da própria marca, sem pessoas nem resultados; depoimento
   de cliente só real e com autorização por escrito (nunca inventado)
 - `components/ui/slide-confirm-button.jsx` + `components/landing/DeslizeCTA.jsx` (cores em `.ltb-deslize`): o arrasto abre a
