@@ -141,3 +141,36 @@ arquivos alterados, screenshots de antes/depois e testes realizados. Peça aprov
 - [ ] Definir formatos SVG, PNG e favicon e regras de exportação
 - [ ] Homologar tokens de interface e biblioteca de componentes
 - [ ] Revisar comunicação jurídica, privacidade e uso de marcas de parceiros
+
+---
+
+## Arte conceitual (referência estética)
+
+Arquivo: `arte-conceitual-v1.0.webp` (nesta pasta). Pela seção 08, serve **só como referência estética**: não reproduzir
+números, nomes ou dados ilustrativos do mockup (ex.: "R$ 25.000,00", "72%", "Loja Alpha", "TPV est. R$ 120 mil").
+Não substitui o arquivo vetorial do logotipo, que ainda não existe.
+
+O que a arte mostra:
+
+- **Símbolo:** balão de conversa com check, contorno em gradiente (azul → verde-água → verde) sobre fundo navy ou claro.
+- **Assinatura:** "Let's Touch Base." em duas linhas, com o ponto final em verde, separada do símbolo por um fio
+  vertical; descritor "INTELLIGENT SALES WORKSPACE" em caixa alta espaçada.
+- **Variações exibidas:** horizontal; símbolo sobre quadrado navy de cantos arredondados; símbolo isolado.
+- **Chamada:** "Every conversation moves business forward." com "moves business forward." em gradiente verde → azul,
+  sobre fundo navy com ondas de gradiente.
+- **Paleta com atributos:** Midnight Navy (confiança e solidez) · Electric Blue (tecnologia e ação) · Growth Green
+  (resultados e sucesso) · AI Purple (inteligência e inovação) · Slate (equilíbrio e estrutura) · Cloud White
+  (clareza e simplicidade).
+- **Tipografia:** Inter (principal: moderna, legível e versátil) e Manrope (alternativa: elegante, com forte presença de marca).
+
+Divergências entre a arte e o manual/produto (vale o manual e o que existe no sistema):
+
+- Textos de missão e visão da arte são variações do PDF; para uso oficial, usar o texto do PDF.
+- O menu lateral do mockup (Leads, Propostas, Parceiros, Relatórios, Configurações) não corresponde a telas existentes;
+  são ideias, não funcionalidades.
+- As colunas do Kanban aparecem em cores diferentes por fase; o manual proíbe indicar fase só por cor (manter nome e
+  número da fase).
+- O WhatsApp do mockup apresenta o bot como "assistente comercial da Let's Touch Base". No produto, a IA fala em nome
+  da consultoria; qual nome o lead vê é decisão comercial ainda não tomada.
+- Afirmações como "IA Comercial 24/7" e "Relacionamento sem perda" devem respeitar a seção 07 (sem promessas
+  absolutas) em materiais externos.

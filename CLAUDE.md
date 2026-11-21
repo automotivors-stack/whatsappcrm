@@ -11,6 +11,8 @@ Manual: `docs/marca/manual-de-marca.md` (transcrição) e `docs/marca/lets-touch
 **Leia o manual antes de qualquer mudança de interface ou texto voltado ao cliente.** Resumo:
 
 - Versão 1.0 **conceitual**, ainda em homologação; o logotipo não tem arquivo vetorial final (não desenhar um por conta própria).
+- Arte conceitual: `docs/marca/arte-conceitual-v1.0.webp` (só referência estética; ver as divergências anotadas no fim de
+  `docs/marca/manual-de-marca.md`; nunca copiar números ou nomes do mockup).
 - Paleta: Midnight Navy `#0B1F44` (marca, títulos, navegação) · Electric Blue `#2563EB` (ação primária, links, foco) ·
   Growth Green `#22C55E` (sucesso, operação saudável) · AI Purple `#7C3AED` (IA e insights) · Slate `#94A3B8`
   (texto auxiliar, bordas) · Cloud White `#F8FAFC` (fundo). Verde nunca é ação primária; vermelho/âmbar só para
