@@ -1,0 +1,12 @@
+{
+  "name": "whatsapp-crm",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "db:migrate": "node --env-file-if-exists=.env.local scripts/migrate.mjs",
+    "test:db": "node --test tests/*.test.mjs"
+  },
+  "dependencies": {
+    "@libsql/client": "0.18.0"
+  }
+}
