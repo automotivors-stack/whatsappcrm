@@ -20,7 +20,6 @@ export default function CinematicHero() {
   const sequencia = useRef(null);
   const marca = useRef(null);
   const transicao = useRef(null);
-  const cortina = useRef(null);
   const aviso = useRef(null);
   const sensor = useRef(null); // ouvinte do giroscópio (opcional, só quando o visitante ativa)
   const [estado, setEstado] = useState("inicial"); // inicial | animado | estatico
@@ -102,7 +101,6 @@ export default function CinematicHero() {
             gsap.set(frases.slice(1), { autoAlpha: 0 });
             gsap.set(marca.current, { autoAlpha: 0, y: 24 });
             gsap.set(transicao.current, { autoAlpha: 0, y: 40 });
-            gsap.set(cortina.current, { scaleY: 0 });
 
             // Sequência: cada frase entra por máscara e muda o ritmo da cena.
             const intro = gsap.timeline({ defaults: { ease: "power3.out" } });
@@ -151,9 +149,10 @@ export default function CinematicHero() {
               });
               tl.to(marca.current, { autoAlpha: 0, y: -48, ease: "power2.in", duration: 0.3 }, 0.02)
                 .to(aviso.current, { autoAlpha: 0, duration: 0.1 }, 0)
+                // A frase da transição fica na tela até o fim do pin e sai com o hero: a seção 2 entra
+                // logo abaixo, sem tela vazia entre as duas.
                 .to(transicao.current, { autoAlpha: 1, y: 0, ease: "power3.out", duration: 0.3 }, 0.3)
-                .to(transicao.current, { autoAlpha: 0, y: -24, duration: 0.15 }, 0.8)
-                .to(cortina.current, { scaleY: 1, ease: "power2.inOut", duration: 0.25 }, 0.75);
+                .to({}, { duration: 0.4 }, 0.6);
             });
           }, secao);
         })
@@ -206,7 +205,6 @@ export default function CinematicHero() {
         className={`absolute inset-0 -z-10 h-full w-full transition-opacity duration-1000 ${semWebgl ? "hidden" : ""}`}
       />
       <div aria-hidden="true" className="ltb-hero-vinheta pointer-events-none absolute inset-0 -z-10" />
-      <div ref={cortina} aria-hidden="true" className="pointer-events-none absolute inset-0 z-20 origin-bottom bg-ltb-cloud" style={{ transform: "scaleY(0)" }} />
 
       <div className="relative z-10 mx-auto flex h-full max-w-7xl flex-col justify-center px-5 sm:px-10">
         {/* Sequência editorial (decorativa para leitores de tela; o texto completo vem abaixo, oculto). */}
