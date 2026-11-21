@@ -97,9 +97,11 @@ export default function ProblemaNarrativa() {
           <div aria-hidden="true" className="ltb-trilho mt-8 h-[3px] origin-left rounded-full bg-gradient-to-r from-ltb-blue via-sky-400 to-ltb-green" />
         </div>
 
-        <p className="ltb-fecho mt-14 max-w-3xl font-ltb-titulo text-[clamp(1.35rem,3vw,2.25rem)] font-bold leading-snug tracking-[-0.02em]">
+        <p className="ltb-fecho mt-14 max-w-4xl font-ltb-titulo text-[clamp(1.35rem,3vw,2.25rem)] font-bold leading-snug tracking-[-0.02em]">
           Mais contatos não significam necessariamente mais negócios.{" "}
-          <span className="text-ltb-blue">Organização e inteligência fazem a diferença.</span>
+          <span className="text-ltb-blue">
+            O que define uma estratégia de sucesso é a organização, a comunicação e a inteligência em cada interação.
+          </span>
         </p>
       </div>
     </section>
