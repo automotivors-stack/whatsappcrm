@@ -8,7 +8,7 @@ import { FASES, FASES_OPERACAO, exigeFornecedor } from "../lib/kanban.js";
 import { FORNECEDORES, KLUUBPAY, PUSHIN_PAY, VERSAO_TABELA_CUSTOS } from "../lib/custosParceiros.js";
 import { linhasDaMesa } from "../lib/precificacao.js";
 import { comSinal, dinheiro, lerDecimal, paraCampo, percentual, soDigitos } from "../lib/formato.js";
-import { buscarLead, patchLead } from "../lib/apiLeads.js";
+import { buscarDossie, patchLead } from "../lib/apiLeads.js";
 
 const ESTILO_FORNECEDOR = {
   [PUSHIN_PAY]: { icone: "🟢", classe: "border-emerald-300 bg-emerald-50 text-emerald-800" },
@@ -97,6 +97,7 @@ function TextoSpread({ spread, moeda }) {
 export default function ClientDetailView({ leadId, faseDesejada, onFechar, onAtualizado }) {
   const [lead, setLead] = useState(null);
   const [interacoes, setInteracoes] = useState([]);
+  const [mensagens, setMensagens] = useState([]);
   const [erro, setErro] = useState(null);
   const [mensagem, setMensagem] = useState(null);
   const [salvando, setSalvando] = useState(false);
@@ -106,11 +107,12 @@ export default function ClientDetailView({ leadId, faseDesejada, onFechar, onAtu
 
   useEffect(() => {
     let ativo = true;
-    buscarLead(leadId)
+    buscarDossie(leadId)
       .then((dados) => {
         if (!ativo) return;
         setLead(dados.lead);
         setInteracoes(dados.interacoes);
+        setMensagens(dados.mensagens);
         setMesa(campoInicialPrecificacao(dados.lead));
         setOperacao({ volume: paraCampo(dados.lead.volume_real_mes), med: paraCampo(dados.lead.med_real_mes) });
       })
@@ -537,6 +539,27 @@ export default function ClientDetailView({ leadId, faseDesejada, onFechar, onAtu
                     <span className="mt-1 block text-xs text-slate-500">Declarado no diagnóstico: {lead.taxa_med_operacao ?? "não informado"}</span>
                   </label>
                 </div>
+              </Bloco>
+
+              {/* Conversa com a IA */}
+              <Bloco titulo={`Conversa no WhatsApp (${mensagens.length})`}>
+                {mensagens.length === 0 ? (
+                  <p className="text-sm text-slate-500">Nenhuma mensagem registrada.</p>
+                ) : (
+                  <ol className="flex max-h-96 flex-col gap-2 overflow-y-auto pr-1">
+                    {mensagens.map((m) => {
+                      const doCliente = m.role === "user";
+                      return (
+                        <li key={m.id} className={`flex ${doCliente ? "justify-start" : "justify-end"}`}>
+                          <div className={`max-w-[80%] rounded-lg px-3 py-2 text-sm ${doCliente ? "bg-white border border-slate-200 text-slate-800" : "bg-emerald-50 border border-emerald-200 text-slate-800"}`}>
+                            <p className="text-xs text-slate-500">{doCliente ? "Cliente" : "IA"} · {m.created_at}</p>
+                            <p className="whitespace-pre-wrap break-words">{m.content}</p>
+                          </div>
+                        </li>
+                      );
+                    })}
+                  </ol>
+                )}
               </Bloco>
 
               {/* Linha do tempo */}

@@ -10,7 +10,7 @@ import { NOMES_FASES, exigeFornecedor } from "../lib/kanban.js";
 import { KLUUBPAY, PUSHIN_PAY, TABELAS_CUSTO, itemDeCusto } from "../lib/custosParceiros.js";
 import { calcularSpread, montarPrecificacao } from "../lib/precificacao.js";
 import { lerDecimal } from "../lib/formato.js";
-import { atualizarLead, listarLeads, obterLead } from "../services/leads.js";
+import { atualizarLead, listarLeads, obterDossie } from "../services/leads.js";
 import { proxy } from "../proxy.js";
 
 test("as 7 fases oficiais, na ordem", () => {
@@ -105,7 +105,7 @@ afterEach(() => { db.close(); rmSync(pasta, { recursive: true, force: true }); }
 
 test("não avança para Aprovado (nem depois) sem fornecedor", async () => {
   for (const fase of ["Aprovado", "Operando", "Operando dentro das expectativas"]) {
-    await assert.rejects(atualizarLead(db, { id: 1, status_kanban: fase }), (e) => e.status === 422 && /selecione o fornecedor/.test(e.message));
+    await assert.rejects(atualizarLead(db, { id: 1, status_kanban: fase }), (e) => e.status === 400 && /selecione o fornecedor/.test(e.message));
   }
   const l = await atualizarLead(db, { id: 1, status_kanban: "Avançado" });
   assert.equal(l.status_kanban, "Avançado");
@@ -157,7 +157,7 @@ test("GET com filtros por fase e fornecedor; ficha traz as interações", async 
   await assert.rejects(listarLeads(db, { fornecedor: "X" }), (e) => e.status === 400);
 
   await db.execute("INSERT INTO interacoes_cliente (oportunidade_id, tipo, assunto) VALUES (3, 'email', 'Proposta')");
-  const { lead, interacoes } = await obterLead(db, 3);
+  const { lead, interacoes } = await obterDossie(db, 3);
   assert.equal(lead.id, 3);
   assert.equal(interacoes[0].assunto, "Proposta");
 });

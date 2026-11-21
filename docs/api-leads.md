@@ -1,0 +1,122 @@
+# API de leads
+
+Todas as rotas exigem o usuário e a senha do consultor (HTTP Basic, `CRM_USUARIO` / `CRM_SENHA`).
+Erros sempre no formato `{ "error": "mensagem" }`:
+
+| Status | Quando |
+|---|---|
+| 400 | JSON inválido, campo desconhecido, fase/fornecedor inválido, id inválido, fornecedor ausente em "Aprovado" ou depois |
+| 401 | Sem usuário e senha, ou incorretos |
+| 404 | `{ "error": "Oportunidade não encontrada" }` |
+| 500 | Erro interno (detalhe só no log do servidor) |
+
+Todas as consultas são parametrizadas (`sql` + `args`). Os únicos trechos de SQL montados no código
+são nomes de coluna e condições de uma lista fixa; nenhum valor vindo da requisição entra no texto do SQL.
+
+## GET /api/leads
+
+Filtros opcionais, combináveis:
+
+- `status`: uma das 7 fases (`Contato Recebido`, `Interessado`, `Avançado`, `Conta em Análise`, `Aprovado`, `Operando`, `Operando dentro das expectativas`)
+- `fornecedor`: `Pushin Pay`, `Kluubpay` ou `sem_parceiro`
+- `busca`: parte do nome/razão social ou do documento (até 100 caracteres). Termo só com dígitos e `. - /` também encontra o documento sem pontuação (`12345678` acha `12.345.678/0001-90`). `%` e `_` são tratados como texto.
+
+```
+GET /api/leads?fornecedor=Pushin%20Pay&busca=padaria
+```
+
+Resposta `200`, array em `created_at DESC`:
+
+```json
+[
+  {
+    "id": 1,
+    "phone_number": "5521900000001",
+    "nome_ou_razao_social": "Padaria Pão Quente Ltda",
+    "documento": "12.345.678/0001-90",
+    "status_kanban": "Aprovado",
+    "fornecedor_operacao": "Pushin Pay",
+    "dados_precificacao": { "fornecedor": "Pushin Pay", "versao_tabela": "2026-11-21", "valor_referencia": 1000, "itens": { "pix_in_f2": { "percentual": 0.99, "fixo": 0.5, "custo_base": { "percentual": 0.7, "fixo": 0.35, "moeda": "BRL" } } }, "atualizado_em": "2026-11-21T14:00:00.000Z" },
+    "volume_real_mes": 0,
+    "med_real_mes": 0,
+    "saque_terceiros": false,
+    "created_at": "2026-11-21 13:58:02"
+  }
+]
+```
+
+## PATCH /api/leads (id no corpo) e PATCH /api/leads/:id
+
+Campos aceitos: `status_kanban`, `fornecedor_operacao`, `dados_precificacao`, `volume_real_mes`, `med_real_mes`.
+Qualquer outro campo é recusado com 400. Em `/api/leads/:id`, um `id` no corpo diferente do da URL também é recusado.
+
+```json
+PATCH /api/leads/1
+{ "status_kanban": "Aprovado", "fornecedor_operacao": "Pushin Pay" }
+```
+
+```json
+PATCH /api/leads
+{ "id": 1, "dados_precificacao": { "valor_referencia": 1000, "itens": { "pix_in_f2": { "percentual": 0.99, "fixo": 0.5 }, "pix_out": { "fixo": 1.5 } } } }
+```
+
+```json
+PATCH /api/leads/1
+{ "volume_real_mes": 152000.5, "med_real_mes": 0.35 }
+```
+
+Resposta `200`: a oportunidade completa, já atualizada (mesmo formato da listagem).
+
+Regras:
+- `Aprovado`, `Operando` e `Operando dentro das expectativas` exigem `fornecedor_operacao` (`Pushin Pay` ou `Kluubpay`); sem ele, `400`.
+- Trocar o fornecedor descarta a precificação anterior (`dados_precificacao` volta a `null`).
+- `dados_precificacao.itens` só aceita produtos da tabela do fornecedor atual; o servidor grava junto o custo base vigente e a versão da tabela.
+- `volume_real_mes` e `med_real_mes` (MED em %) precisam ser números ≥ 0.
+
+```json
+400 { "error": "Para mover para \"Aprovado\", selecione o fornecedor (Pushin Pay ou Kluubpay)." }
+```
+
+## GET /api/leads/:id (dossiê 360°)
+
+Resposta `200`:
+
+```json
+{
+  "lead": { "id": 1, "nome_ou_razao_social": "Padaria Pão Quente Ltda", "...": "..." },
+  "mensagens": [
+    { "id": 1, "role": "user", "content": "Oi, quero reduzir taxas", "created_at": "2026-11-21 13:58:02" },
+    { "id": 2, "role": "assistant", "content": "Claro! Qual o volume mensal?", "created_at": "2026-11-21 13:58:05" }
+  ],
+  "interacoes": [
+    { "id": 2, "oportunidade_id": 1, "tipo": "whatsapp", "destinatario": "5521900000001", "assunto": null, "mensagem": "Proposta enviada", "status_envio": "sucesso", "created_at": "2026-11-21 14:18:08" }
+  ]
+}
+```
+
+`mensagens` vem do `mensagens_historico` pelo telefone da oportunidade, em ordem cronológica (as 300 mais
+recentes). `interacoes` vem em `created_at DESC`. As duas consultas rodam em paralelo (`Promise.all`).
+
+## GET /api/leads/:id/interacoes
+
+Resposta `200`: array de interações em `created_at DESC` (mesmo formato de `interacoes` acima).
+
+## POST /api/leads/:id/interacoes
+
+Só registra na linha do tempo: não envia WhatsApp nem e-mail.
+
+```json
+POST /api/leads/1/interacoes
+{ "tipo": "email", "destinatario": "financeiro@cliente.com.br", "assunto": "Proposta de taxas", "mensagem": "Segue a proposta.", "status_envio": "sucesso" }
+```
+
+- `tipo` obrigatório (texto livre, até 50 caracteres; ex.: `whatsapp`, `email`, `ligacao`, `nota`).
+- `assunto` ou `mensagem` obrigatório.
+- `status_envio` opcional, padrão `sucesso`.
+- `oportunidade_id` no corpo é opcional; se vier, precisa ser igual ao da URL.
+
+Resposta `201`: a interação criada.
+
+```json
+{ "id": 3, "oportunidade_id": 1, "tipo": "email", "destinatario": "financeiro@cliente.com.br", "assunto": "Proposta de taxas", "mensagem": "Segue a proposta.", "status_envio": "sucesso", "created_at": "2026-11-21 14:20:00" }
+```

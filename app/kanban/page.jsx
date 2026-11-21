@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { FASES, exigeFornecedor } from "../../lib/kanban.js";
 import { KLUUBPAY, PUSHIN_PAY } from "../../lib/custosParceiros.js";
 import ClientDetailView, { BadgeFornecedor } from "../../components/ClientDetailView.jsx";
-import { patchLead } from "../../lib/apiLeads.js";
+import { listarLeads, patchLead } from "../../lib/apiLeads.js";
 
 const FILTROS = [
   { id: "todos", rotulo: "Todos os Leads", icone: "" },
@@ -31,10 +31,7 @@ export default function KanbanPage() {
 
   const carregar = useCallback(async () => {
     try {
-      const resp = await fetch("/api/leads", { cache: "no-store" });
-      const dados = await resp.json();
-      if (!resp.ok) throw new Error(dados.erro ?? "Falha ao carregar.");
-      setLeads(dados.leads);
+      setLeads(await listarLeads());
       setErroCarga(null);
     } catch (e) {
       setErroCarga(e.message);

@@ -6,7 +6,7 @@ import { FORNECEDORES } from "../lib/custosParceiros.js";
 import { ErroPrecificacao, montarPrecificacao } from "../lib/precificacao.js";
 
 export class ErroLeads extends Error {
-  constructor(mensagem, status = 422) {
+  constructor(mensagem, status = 400) {
     super(mensagem);
     this.status = status;
   }
@@ -27,8 +27,10 @@ function paraObjeto(linha) {
   return lead;
 }
 
-/** Lista os cards. Filtros opcionais: status (uma das 7 fases) e fornecedor (ou "sem_parceiro"). */
-export async function listarLeads(db, { status, fornecedor } = {}) {
+/** Lista os cards (mais recentes primeiro). Filtros opcionais, todos parametrizados:
+ *  status (uma das 7 fases), fornecedor ("Pushin Pay", "Kluubpay" ou "sem_parceiro") e
+ *  busca (nome/razão social ou documento; com ou sem pontuação no documento). */
+export async function listarLeads(db, { status, fornecedor, busca } = {}) {
   const where = [];
   const args = [];
   if (status) {
@@ -46,6 +48,21 @@ export async function listarLeads(db, { status, fornecedor } = {}) {
       throw new ErroLeads("Fornecedor inválido.", 400);
     }
   }
+  const termo = String(busca ?? "").trim();
+  if (termo) {
+    if (termo.length > TAMANHO_MAXIMO_BUSCA) throw new ErroLeads("Busca muito longa.", 400);
+    const padrao = `%${escaparLike(termo)}%`;
+    const condicoes = ["nome_ou_razao_social LIKE ? ESCAPE '\\'", "documento LIKE ? ESCAPE '\\'"];
+    args.push(padrao, padrao);
+    const digitos = termo.replace(/\D/g, "");
+    // Só quando o termo parece documento (dígitos e . - /): "100%" não vira busca por dígitos.
+    if (/^[\d.\-/\s]+$/.test(termo) && digitos.length >= 3) {
+      // "12345678" encontra "12.345.678/0001-90"
+      condicoes.push("REPLACE(REPLACE(REPLACE(documento, '.', ''), '/', ''), '-', '') LIKE ?");
+      args.push(`%${digitos}%`);
+    }
+    where.push(`(${condicoes.join(" OR ")})`);
+  }
   const { rows } = await db.execute({
     sql: `SELECT * FROM oportunidades ${where.length ? `WHERE ${where.join(" AND ")}` : ""} ORDER BY created_at DESC, id DESC`,
     args,
@@ -53,16 +70,93 @@ export async function listarLeads(db, { status, fornecedor } = {}) {
   return rows.map(paraObjeto);
 }
 
-/** Um card com a linha do tempo de interações (mais recentes primeiro). */
-export async function obterLead(db, id) {
+const TAMANHO_MAXIMO_BUSCA = 100;
+const LIMITE_MENSAGENS_DOSSIE = 300;
+
+function escaparLike(texto) {
+  return texto.replace(/[\\%_]/g, (c) => `\\${c}`);
+}
+
+export function validarId(valor) {
+  const id = Number(valor);
+  if (!Number.isInteger(id) || id <= 0 || String(valor).trim() !== String(id)) {
+    throw new ErroLeads("Id inválido.", 400);
+  }
+  return id;
+}
+
+async function exigirOportunidade(db, id) {
   const { rows } = await db.execute({ sql: "SELECT * FROM oportunidades WHERE id = ?", args: [id] });
-  if (!rows.length) throw new ErroLeads("Lead não encontrado.", 404);
-  const interacoes = await db.execute({
-    sql: `SELECT id, tipo, destinatario, assunto, mensagem, status_envio, created_at
+  if (!rows.length) throw new ErroLeads("Oportunidade não encontrada", 404);
+  return paraObjeto(rows[0]);
+}
+
+/** Interações da oportunidade, mais recentes primeiro. */
+export async function listarInteracoes(db, id) {
+  await exigirOportunidade(db, id);
+  return consultarInteracoes(db, id);
+}
+
+async function consultarInteracoes(db, id) {
+  const { rows } = await db.execute({
+    sql: `SELECT id, oportunidade_id, tipo, destinatario, assunto, mensagem, status_envio, created_at
           FROM interacoes_cliente WHERE oportunidade_id = ? ORDER BY created_at DESC, id DESC`,
     args: [id],
   });
-  return { lead: paraObjeto(rows[0]), interacoes: interacoes.rows.map((r) => ({ ...r })) };
+  return rows.map((r) => ({ ...r, id: Number(r.id), oportunidade_id: Number(r.oportunidade_id) }));
+}
+
+/**
+ * Dossiê 360°: a oportunidade, a conversa com a IA no WhatsApp (ordem cronológica, últimas
+ * LIMITE_MENSAGENS_DOSSIE) e a linha do tempo de interações (mais recentes primeiro).
+ */
+export async function obterDossie(db, id) {
+  const lead = await exigirOportunidade(db, id);
+  const [mensagens, interacoes] = await Promise.all([
+    lead.phone_number
+      ? db.execute({
+          sql: `SELECT id, role, content, created_at FROM (
+                  SELECT id, role, content, created_at FROM mensagens_historico
+                  WHERE phone_number = ? ORDER BY created_at DESC, id DESC LIMIT ?
+                ) ORDER BY created_at ASC, id ASC`,
+          args: [lead.phone_number, LIMITE_MENSAGENS_DOSSIE],
+        }).then((r) => r.rows.map((m) => ({ ...m, id: Number(m.id) })))
+      : Promise.resolve([]),
+    consultarInteracoes(db, id),
+  ]);
+  return { lead, mensagens, interacoes };
+}
+
+const LIMITES_INTERACAO = { tipo: 50, destinatario: 200, assunto: 200, mensagem: 10000, status_envio: 30 };
+
+/** Registra uma interação (manual ou automática). Só grava: não envia mensagem nem e-mail. */
+export async function criarInteracao(db, id, entrada) {
+  if (!entrada || typeof entrada !== "object") throw new ErroLeads("Corpo inválido.", 400);
+  if (entrada.oportunidade_id !== undefined && Number(entrada.oportunidade_id) !== id) {
+    throw new ErroLeads("oportunidade_id do corpo diferente do da URL.", 400);
+  }
+  const desconhecidos = Object.keys(entrada).filter((k) => k !== "oportunidade_id" && !(k in LIMITES_INTERACAO));
+  if (desconhecidos.length) throw new ErroLeads(`Campo não aceito: ${desconhecidos.join(", ")}.`, 400);
+
+  const valores = {};
+  for (const [campo, limite] of Object.entries(LIMITES_INTERACAO)) {
+    const v = entrada[campo];
+    if (v === undefined || v === null || v === "") continue;
+    if (typeof v !== "string") throw new ErroLeads(`"${campo}" precisa ser texto.`, 400);
+    if (v.length > limite) throw new ErroLeads(`"${campo}" passa de ${limite} caracteres.`, 400);
+    valores[campo] = v.trim();
+  }
+  if (!valores.tipo) throw new ErroLeads('Informe o "tipo" da interação (ex.: whatsapp, email, ligacao, nota).', 400);
+  if (!valores.assunto && !valores.mensagem) throw new ErroLeads('Informe "assunto" ou "mensagem".', 400);
+
+  await exigirOportunidade(db, id);
+  const { rows } = await db.execute({
+    sql: `INSERT INTO interacoes_cliente (oportunidade_id, tipo, destinatario, assunto, mensagem, status_envio)
+          VALUES (?, ?, ?, ?, ?, COALESCE(?, 'sucesso'))
+          RETURNING id, oportunidade_id, tipo, destinatario, assunto, mensagem, status_envio, created_at`,
+    args: [id, valores.tipo, valores.destinatario ?? null, valores.assunto ?? null, valores.mensagem ?? null, valores.status_envio ?? null],
+  });
+  return { ...rows[0], id: Number(rows[0].id), oportunidade_id: Number(rows[0].oportunidade_id) };
 }
 
 function numeroNaoNegativo(valor, rotulo) {
@@ -94,7 +188,7 @@ export async function atualizarLead(db, entrada) {
       sql: "SELECT status_kanban, fornecedor_operacao, dados_precificacao FROM oportunidades WHERE id = ?",
       args: [id],
     });
-    if (!rows.length) throw new ErroLeads("Lead não encontrado.", 404);
+    if (!rows.length) throw new ErroLeads("Oportunidade não encontrada", 404);
     const atual = rows[0];
 
     const status = tem("status_kanban") ? entrada.status_kanban : atual.status_kanban;
@@ -105,7 +199,7 @@ export async function atualizarLead(db, entrada) {
       throw new ErroLeads(`Fornecedor inválido. Use ${FORNECEDORES.join(" ou ")}.`, 400);
     }
     if (exigeFornecedor(status) && !fornecedor) {
-      throw new ErroLeads(`Para mover para "${status}", selecione o fornecedor (${FORNECEDORES.join(" ou ")}).`);
+      throw new ErroLeads(`Para mover para "${status}", selecione o fornecedor (${FORNECEDORES.join(" ou ")}).`, 400);
     }
 
     let precificacao = atual.dados_precificacao;
@@ -133,7 +227,7 @@ export async function atualizarLead(db, entrada) {
     return paraObjeto(final.rows[0]);
   } catch (erro) {
     if (!tx.closed) await tx.rollback();
-    if (erro instanceof ErroPrecificacao) throw new ErroLeads(erro.message);
+    if (erro instanceof ErroPrecificacao) throw new ErroLeads(erro.message, 400);
     throw erro;
   } finally {
     tx.close();
