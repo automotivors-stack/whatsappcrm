@@ -62,7 +62,7 @@ export function formatarAvisoAdmin(dados, id) {
  *  a) pausa o bot no chat do cliente (status_relacionamento = 'pausado_humano');
  *  b) grava a pendência em `aprovacoes_pendentes` (uma aberta por contato; a nova substitui os dados);
  *  c) avisa o consultor no ADMIN_WHATSAPP_NUMBER.
- * Se o aviso falhar, a pendência fica com aviso_enviado = 0 e o erro sobe para o log.
+ * Se o aviso falhar, o erro vai para o log e a pendência fica com aviso_enviado = 0, visível no painel.
  */
 export async function finalizarDiagnostico(ctx, telefone, diagnostico) {
   const { db, enviar, adminNumero } = ctx;
@@ -88,10 +88,20 @@ export async function finalizarDiagnostico(ctx, telefone, diagnostico) {
   );
   const id = Number(pendencia.rows[0].id);
 
-  await enviar(chatIdDoTelefone(adminNumero), formatarAvisoAdmin(dados, id));
+  // O lead nunca se perde: a pendência já está gravada. Se o WhatsApp do consultor falhar,
+  // ela fica com aviso_enviado = 0 e aparece no aviso do painel (Kanban e Dashboard).
+  try {
+    await enviar(chatIdDoTelefone(adminNumero), formatarAvisoAdmin(dados, id));
+  } catch (erro) {
+    console.error(
+      `[aprovacao] aviso da pendência #${id} (${mascarar(telefone)}) NÃO chegou ao consultor: ${erro?.message ?? erro}. ` +
+        "Ela está no painel, em 'diagnósticos aguardando aprovação'.",
+    );
+    return { id, avisoEnviado: false };
+  }
   await db.execute({ sql: "UPDATE aprovacoes_pendentes SET aviso_enviado = 1 WHERE id = ?", args: [id] });
   console.info(`[aprovacao] pendência #${id} criada para ${mascarar(telefone)}`);
-  return { id };
+  return { id, avisoEnviado: true };
 }
 
 /** Normaliza "Sim", "*não*", "NAO 12", "nao #12" → { decisao: "SIM"|"NAO", id?: number } ou null. */
@@ -164,59 +174,82 @@ export async function tratarRespostaAdmin(ctx, texto) {
     alvo = abertas[0];
   }
 
-  if (decisao.decisao === "NAO") {
-    const r = await db.execute({
-      sql: `UPDATE aprovacoes_pendentes SET status = 'descartado', decidido_em = CURRENT_TIMESTAMP
-            WHERE id = ? AND status = 'aguardando'`,
-      args: [alvo.id],
-    });
-    if (r.rowsAffected === 0) {
-      await responder(`O diagnóstico #${alvo.id} já tinha sido decidido.`);
-      return { acao: "admin_ja_decidido" };
-    }
+  const r = await decidirPendencia(db, alvo.id, decisao.decisao);
+  if (r.resultado === "ja_decidido") {
+    await responder(`O diagnóstico #${alvo.id} já tinha sido decidido.`);
+    return { acao: "admin_ja_decidido" };
+  }
+  if (r.resultado === "descartado") {
     await responder(`🗑️ Diagnóstico #${alvo.id} (${nomeDe(alvo.dados)}) descartado. Nada foi cadastrado no CRM.`);
     return { acao: "descartado", pendenciaId: alvo.id };
   }
+  await responder(`${TEXTO_LEAD_INSERIDO}\n#${alvo.id} ${nomeDe(alvo.dados)}`);
+  return { acao: "aprovado", pendenciaId: alvo.id, oportunidadeId: r.oportunidadeId };
+}
 
-  // SIM: tudo numa transação, protegida contra duas aprovações simultâneas da mesma pendência.
-  const tx = await db.transaction("write");
-  let oportunidadeId;
-  try {
-    const marcada = await tx.execute({
-      sql: `UPDATE aprovacoes_pendentes SET status = 'aprovado', decidido_em = CURRENT_TIMESTAMP
+/**
+ * Decide uma pendência: a MESMA regra para o SIM/NÃO do WhatsApp e para os botões do painel.
+ *  SIM → cria a oportunidade em 'Contato Recebido' (numa transação; duas aprovações simultâneas
+ *        da mesma pendência criam um card só). NÃO → descarta. Nada é apagado.
+ * @param {"SIM"|"NAO"} decisao
+ * @returns {Promise<{ resultado: "aprovado"|"descartado"|"ja_decidido"|"inexistente", oportunidadeId?: number }>}
+ */
+export async function decidirPendencia(db, id, decisao) {
+  if (decisao !== "SIM" && decisao !== "NAO") throw new Error("Decisão inválida.");
+  const existe = await db.execute({ sql: "SELECT status FROM aprovacoes_pendentes WHERE id = ?", args: [id] });
+  if (!existe.rows.length) return { resultado: "inexistente" };
+
+  if (decisao === "NAO") {
+    const r = await db.execute({
+      sql: `UPDATE aprovacoes_pendentes SET status = 'descartado', decidido_em = CURRENT_TIMESTAMP
             WHERE id = ? AND status = 'aguardando'`,
-      args: [alvo.id],
+      args: [id],
     });
-    if (marcada.rowsAffected === 0) {
-      await tx.rollback();
-      await responder(`O diagnóstico #${alvo.id} já tinha sido decidido.`);
-      return { acao: "admin_ja_decidido" };
-    }
-    const { rows } = await tx.execute({
-      sql: "SELECT phone_number, dados FROM aprovacoes_pendentes WHERE id = ?",
-      args: [alvo.id],
-    });
-    const telefone = rows[0].phone_number;
-    const dados = JSON.parse(rows[0].dados);
-    const colunas = CAMPOS_DIAGNOSTICO.filter((c) => dados[c] !== undefined);
-    const inserida = await tx.execute({
-      sql: `INSERT INTO oportunidades (phone_number, ${colunas.join(", ")}, status_kanban)
-            VALUES (?, ${colunas.map(() => "?").join(", ")}, 'Contato Recebido') RETURNING id`,
-      args: [telefone, ...colunas.map((c) => dados[c])],
-    });
-    oportunidadeId = Number(inserida.rows[0].id);
-    await tx.execute({
-      sql: "UPDATE aprovacoes_pendentes SET oportunidade_id = ? WHERE id = ?",
-      args: [oportunidadeId, alvo.id],
-    });
-    await tx.commit();
-  } catch (erro) {
-    if (!tx.closed) await tx.rollback();
-    throw erro;
-  } finally {
-    tx.close();
+    return { resultado: r.rowsAffected === 0 ? "ja_decidido" : "descartado" };
   }
 
-  await responder(`${TEXTO_LEAD_INSERIDO}\n#${alvo.id} ${nomeDe(alvo.dados)}`);
-  return { acao: "aprovado", pendenciaId: alvo.id, oportunidadeId };
+  // Um lote atômico (batch): o banco executa os lotes um de cada vez, então dois "SIM" ao mesmo
+  // tempo (painel + WhatsApp, ou duas abas) viram um aprovado e um "já decidido", sem erro de
+  // banco ocupado. Cada passo só age se o anterior agiu (condições no próprio SQL).
+  const colunas = CAMPOS_DIAGNOSTICO;
+  const [marcada, inserida] = await db.batch(
+    [
+      {
+        sql: `UPDATE aprovacoes_pendentes SET status = 'aprovado', decidido_em = CURRENT_TIMESTAMP
+              WHERE id = ? AND status = 'aguardando'`,
+        args: [id],
+      },
+      {
+        sql: `INSERT INTO oportunidades (phone_number, ${colunas.join(", ")}, status_kanban)
+              SELECT phone_number, ${colunas.map((c) => `json_extract(dados, '$.${c}')`).join(", ")}, 'Contato Recebido'
+              FROM aprovacoes_pendentes
+              WHERE id = ? AND status = 'aprovado' AND oportunidade_id IS NULL AND changes() = 1
+              RETURNING id`,
+        args: [id],
+      },
+      {
+        sql: `UPDATE aprovacoes_pendentes SET oportunidade_id = last_insert_rowid()
+              WHERE id = ? AND oportunidade_id IS NULL AND changes() = 1`,
+        args: [id],
+      },
+    ],
+    "write",
+  );
+  if (marcada.rowsAffected === 0 || !inserida.rows.length) return { resultado: "ja_decidido" };
+  return { resultado: "aprovado", oportunidadeId: Number(inserida.rows[0].id) };
+}
+
+/** Pendências abertas para o painel (fallback do WhatsApp), mais antigas primeiro. */
+export async function listarPendencias(db) {
+  const { rows } = await db.execute(
+    `SELECT id, phone_number, dados, aviso_enviado, created_at
+     FROM aprovacoes_pendentes WHERE status = 'aguardando' ORDER BY created_at, id`,
+  );
+  return rows.map((r) => ({
+    id: Number(r.id),
+    telefone: r.phone_number,
+    dados: JSON.parse(r.dados),
+    aviso_enviado: Number(r.aviso_enviado) === 1,
+    created_at: r.created_at,
+  }));
 }

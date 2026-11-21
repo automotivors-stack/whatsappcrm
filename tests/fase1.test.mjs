@@ -193,9 +193,15 @@ test("SIM sem pendência não cria nada", async () => {
   assert.equal(await contar("oportunidades"), 0);
 });
 
-test("falha no aviso ao consultor: pendência fica registrada com aviso_enviado = 0", async () => {
-  ctx.enviar = async (chatId) => { if (chatId.startsWith(ADMIN)) throw new Error("OpenWA fora"); };
-  await assert.rejects(finalizarComDiagnostico(), /OpenWA fora/);
+test("falha no aviso ao consultor: o fluxo segue, a pendência fica registrada com aviso_enviado = 0", async () => {
+  const doLead = [];
+  ctx.enviar = async (chatId, texto) => {
+    if (chatId.startsWith(ADMIN)) throw new Error("OpenWA fora");
+    doLead.push(texto);
+  };
+  const r = await finalizarComDiagnostico();
+  assert.equal(r.acao, "aguardando_aprovacao"); // não derruba mais o processamento
+  assert.equal(doLead.length, 1); // o lead recebeu a mensagem de encerramento
   const p = (await db.execute("SELECT aviso_enviado FROM aprovacoes_pendentes")).rows[0];
   assert.equal(p.aviso_enviado, 0);
   assert.equal(await contar("oportunidades"), 0);

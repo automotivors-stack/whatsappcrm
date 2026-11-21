@@ -7,6 +7,7 @@ import { useCallback, useEffect, useState } from "react";
 import { buscarMetricas } from "../../lib/apiLeads.js";
 import { KLUUBPAY, PUSHIN_PAY } from "../../lib/custosParceiros.js";
 import ClientDetailView, { BadgeFornecedor } from "../../components/ClientDetailView.jsx";
+import AprovacoesPendentes from "../../components/AprovacoesPendentes.jsx";
 
 const PERIODOS = [
   ["mes", "Este mês"],
@@ -263,6 +264,8 @@ export default function DashboardPage() {
           ))}
         </div>
       </header>
+
+      <AprovacoesPendentes onDecidido={carregar} />
 
       {erro && (
         <div className="rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-800">

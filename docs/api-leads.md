@@ -204,3 +204,23 @@ de entrada no CRM). Carteira, TPV, lucro e MED são o **retrato atual**: o últi
 - Volume declarado e teto de MED vêm do diagnóstico como texto ("R$ 150 mil", "0,5%") e são lidos como número;
   quando não dá para ler, o valor fica `null` e não entra nas somas.
 - Meta: `META_LUCRO_MENSAL` (padrão 25000). Lucro realizado = soma de `lucro_real_mes` das contas em operação.
+
+## GET /api/aprovacoes e POST /api/aprovacoes/:id
+
+Contingência do SIM/NÃO no WhatsApp do consultor. Todo diagnóstico concluído pela IA fica em
+`aprovacoes_pendentes` com status `aguardando` (pendente de aprovação) antes de qualquer aviso; se o aviso no
+WhatsApp falhar, o erro vai para o log e a pendência fica com `aviso_enviado = 0`. O Kanban e o Dashboard mostram
+"🔔 N diagnósticos concluídos aguardando aprovação" com o resumo e os botões Aprovar (SIM) / Descartar (NÃO).
+
+```
+GET /api/aprovacoes
+→ 200 [ { "id": 2, "telefone": "5521977776666", "aviso_enviado": false, "created_at": "...", "dados": { "nome_ou_razao_social": "...", "resumo_executivo": "..." } } ]
+
+POST /api/aprovacoes/2   { "decisao": "SIM" }   → 200 { "resultado": "aprovado", "oportunidadeId": 15 }
+POST /api/aprovacoes/2   { "decisao": "NAO" }   → 200 { "resultado": "descartado" }
+```
+
+- Mesma regra do WhatsApp: SIM cria o card em "Contato Recebido"; NÃO descarta; nada é apagado.
+- Já decidida (pelo WhatsApp, por outra aba ou ao mesmo tempo) → `409 { "error": "Este diagnóstico já foi decidido." }`.
+  Duas aprovações simultâneas criam um único card.
+- `decisao` diferente de SIM/NAO → 400; id inexistente → 404; sem `Content-Type: application/json` → 415.
