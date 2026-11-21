@@ -5,6 +5,7 @@
 // arquivo em /public, que ficaria atrás da senha do proxy.js. O componente da roda não foi alterado; as cores e a
 // fonte da marca entram pelas props (style), e a roda segue igual em qualquer outro uso.
 
+import { useCallback, useEffect, useRef, useState } from "react";
 import { WorksWheel } from "../ui/works-wheel.jsx";
 
 const PILARES = [
@@ -62,30 +63,88 @@ const ITENS = PILARES.map((p, i) => ({
   alt: `${p.titulo} ${p.resto}`,
 }));
 
+// Quanto de rolagem (em alturas de tela) cada passo da roda ocupa: anel → Talento → … → Inteligência.
+const ROLAGEM_POR_PASSO = 0.7;
+
+/** Segura a roda em cada peça e só gira no meio do trecho: a peça fica parada para leitura antes de a próxima vir. */
+function comPausas(bruto) {
+  const base = Math.floor(bruto);
+  const f = bruto - base;
+  const s = Math.min(1, Math.max(0, (f - 0.25) / 0.5));
+  return base + s * s * (3 - 2 * s);
+}
+
 export default function PilaresRoda() {
+  // A roda acompanha a rolagem da página nos dois sentidos: descendo, o anel abre e os pilares avançam; subindo, voltam.
+  // A seção é alta e a roda fica fixa (sticky) enquanto a página passa por ela; nada prende a rolagem, no celular também.
+  const secao = useRef(null);
+  const [progresso, setProgresso] = useState(0);
+  const passos = ITENS.length; // 0 = anel, 1..4 = cada pilar na frente
+
+  useEffect(() => {
+    let quadro = 0;
+    const medir = () => {
+      quadro = 0;
+      const el = secao.current;
+      if (!el) return;
+      const total = el.offsetHeight - window.innerHeight;
+      const p = total > 0 ? Math.min(1, Math.max(0, -el.getBoundingClientRect().top / total)) : 0;
+      setProgresso(comPausas(p * passos));
+    };
+    const pedir = () => {
+      if (!quadro) quadro = requestAnimationFrame(medir);
+    };
+    medir();
+    window.addEventListener("scroll", pedir, { passive: true });
+    window.addEventListener("resize", pedir);
+    return () => {
+      cancelAnimationFrame(quadro);
+      window.removeEventListener("scroll", pedir);
+      window.removeEventListener("resize", pedir);
+    };
+  }, [passos]);
+
+  // Lista, setas e clique num cartão: a página rola até o ponto em que aquela peça fica na frente.
+  const irPara = useCallback(
+    (passo) => {
+      const el = secao.current;
+      if (!el) return;
+      const total = el.offsetHeight - window.innerHeight;
+      const topo = el.getBoundingClientRect().top + window.scrollY;
+      const reduzido = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      window.scrollTo({ top: topo + (passo / passos) * total, behavior: reduzido ? "auto" : "smooth" });
+    },
+    [passos],
+  );
+
   return (
-    <section aria-labelledby="pilares-titulo" className="bg-ltb-navy-deep pt-16">
+    <section
+      ref={secao}
+      aria-labelledby="pilares-titulo"
+      className="relative bg-ltb-navy-deep"
+      style={{ height: `${100 + passos * ROLAGEM_POR_PASSO * 100}svh` }}
+    >
       <h2 id="pilares-titulo" className="sr-only">
         Talento abre caminhos. Persistência move. Organização dá direção. Inteligência acelera.
       </h2>
-      <WorksWheel
-        items={ITENS}
-        label="Let’s Touch Base."
-        action=""
-        // Gira sozinha enquanto está na tela (anel, cada pilar, de volta ao anel) até o visitante mexer nela;
-        // com "reduzir movimento" no sistema, não gira. 2,6 s por pilar: tempo de ler a frase do cartão.
-        autoPlay
-        interval={2600}
-        className="h-[min(78svh,760px)] max-sm:h-[68svh]"
-        style={{
-          "--ww-bg": "#050d1f",
-          "--ww-fg": "#f8fafc",
-          "--ww-muted": "#94a3b8",
-          "--ww-card": "#0b1f44",
-          "--ww-shadow": "rgba(37, 99, 235, .35)",
-          fontFamily: '"Manrope Variable", "Inter Variable", system-ui, Arial, sans-serif',
-        }}
-      />
+      <div className="sticky top-0 h-[100svh] pt-16">
+        <WorksWheel
+          items={ITENS}
+          label="Let’s Touch Base."
+          action=""
+          progress={progresso}
+          onRequest={irPara}
+          className="h-full"
+          style={{
+            "--ww-bg": "#050d1f",
+            "--ww-fg": "#f8fafc",
+            "--ww-muted": "#94a3b8",
+            "--ww-card": "#0b1f44",
+            "--ww-shadow": "rgba(37, 99, 235, .35)",
+            fontFamily: '"Manrope Variable", "Inter Variable", system-ui, Arial, sans-serif',
+          }}
+        />
+      </div>
     </section>
   );
 }

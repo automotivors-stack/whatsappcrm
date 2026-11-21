@@ -12,6 +12,9 @@
 - As quatro frases (Talento abre caminhos, Persistência move, Organização dá direção, Inteligência acelera) são cartões
   em SVG gerados no próprio componente: nada em `/public` (ficaria atrás da senha do `proxy.js`) e nada externo.
 - Cores e fonte da marca entram pelas props (`style` com as variáveis `--ww-*`), sem mexer no componente.
+- A roda acompanha a rolagem da página nos dois sentidos (seção alta com a roda fixa; 0,7 tela de rolagem por passo,
+  com pausa em cada pilar). Para isso o componente ganhou o modo controlado (`progress`/`onRequest`), marcado no código;
+  sem `progress` ele funciona como o original. Lista, setas e clique num cartão rolam a página até o pilar.
 - A demo do prompt (página `/obras` com capas do Unsplash) não foi criada: seria uma rota nova atrás da senha e com
   imagens que não são da marca.
 

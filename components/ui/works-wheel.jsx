@@ -93,6 +93,11 @@ export function WorksWheel({
   theme = "dark",
   autoPlay = false,
   interval = 1800,
+  // Acréscimo da Let's Touch Base. (modo controlado): com progress (0 = anel, 1 = primeira peça … items.length = última),
+  // quem manda na roda é a página (a rolagem); a roda não pega a rolagem nem o arraste, e o que antes a girava (lista,
+  // setas, clique num cartão) chama onRequest(peça) para a página rolar até lá. Sem progress, tudo como no original.
+  progress,
+  onRequest,
   className,
   ...props
 }) {
@@ -225,19 +230,31 @@ export function WorksWheel({
     }
   }, [metrics, stage.h, count, last, reduced])
 
+  const controlled = typeof progress === "number"
   const to = React.useCallback(
     (next) => {
+      if (controlled) {
+        onRequest?.(clamp(Math.round(next), 0, last + 1))
+        return
+      }
       target.current = clamp(next, 0, last + 1)
       wake.current()
     },
-    [last],
+    [last, controlled, onRequest],
   )
+
+  // modo controlado: a página diz onde a roda está
+  React.useEffect(() => {
+    if (!controlled) return
+    target.current = clamp(progress, 0, last + 1)
+    wake.current()
+  }, [controlled, progress, last, metrics])
 
   // Ouvinte nativo, porque a rolagem tem de poder ser cancelada; e ela só é cancelada enquanto a roda ainda tem para
   // onde ir, então nas pontas a página continua rolando em vez de prender quem lê.
   React.useEffect(() => {
     const el = stageRef.current
-    if (!el) return
+    if (!el || controlled) return
     let settling = 0
     // onde a rajada de rolagem começou
     let from = null
@@ -268,7 +285,7 @@ export function WorksWheel({
       el.removeEventListener("wheel", onWheel)
       window.clearTimeout(settling)
     }
-  }, [to, last])
+  }, [to, last, controlled])
 
   // autoPlay: anel, cada peça na frente, e de volta ao anel; só enquanto a roda está na tela
   React.useEffect(() => {
@@ -312,9 +329,9 @@ export function WorksWheel({
         aria-label={label}
         aria-activedescendant={count ? `${uid}-${active}` : undefined}
         className="ww-stage"
-        style={{ perspective: `${metrics.depth}px` }}
+        style={{ perspective: `${metrics.depth}px`, touchAction: controlled ? "pan-y" : undefined, cursor: controlled ? "default" : undefined }}
         onPointerDown={(event) => {
-          if (event.button !== 0) return
+          if (event.button !== 0 || controlled) return
           // a altura na tela, com o transform em volta: é nela que o ponteiro anda
           const px = Math.max(event.currentTarget.getBoundingClientRect().height * DRAG_SHARE, 1)
           drag.current = {
