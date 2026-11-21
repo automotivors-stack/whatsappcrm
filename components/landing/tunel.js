@@ -3,7 +3,8 @@
 // elas se alinham em trilhos e a estrutura do corredor aparece (crescimento organizado).
 //
 // API: criarTunel(canvas, { movel, reduzido }) → null (sem WebGL) ou
-//   { setPonteiro(x, y), setAlvo({ velocidade, ordem }), setProgresso(p), ativar(bool), dispose() }
+//   { setPonteiro(x, y), setAlvo({ velocidade, ordem }), setVelocidade(v), explodir(), setProgresso(p),
+//     ativar(bool), dispose() }
 //   x, y em [-1, 1]; ordem e p em [0, 1].
 
 import {
@@ -160,6 +161,8 @@ export function criarTunel(canvas, { movel = false, reduzido = false } = {}) {
     quadros: 0,
     somaQuadros: 0,
     reduzidoQualidade: false,
+    explosao: 0, // 1 no instante da explosão, decai até 0
+    fovBase: 72,
   };
   const boneco = new Object3D();
 
@@ -169,7 +172,8 @@ export function criarTunel(canvas, { movel = false, reduzido = false } = {}) {
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
     // Em telas estreitas, abre o campo de visão para o corredor não parecer um tubo.
-    camera.fov = camera.aspect < 0.8 ? 88 : 72;
+    estado.fovBase = camera.aspect < 0.8 ? 88 : 72;
+    camera.fov = estado.fovBase + estado.explosao * 32;
     camera.updateProjectionMatrix();
   }
   redimensionar();
@@ -195,7 +199,17 @@ export function criarTunel(canvas, { movel = false, reduzido = false } = {}) {
     estado.camera.y = lerp(estado.camera.y, py * 0.62, suave);
     estado.camera.alvoX = lerp(estado.camera.alvoX, px * 2.6, suave);
     estado.camera.alvoY = lerp(estado.camera.alvoY, py * 1.4, suave);
-    camera.position.set(estado.camera.x, estado.camera.y, 4);
+    // Em alta velocidade a câmera treme de leve; na explosão, o campo de visão abre e volta.
+    const tremor = limitar((estado.velocidade - 45) / 75, 0, 1) * 0.05 + estado.explosao * 0.08;
+    camera.position.set(estado.camera.x + (Math.random() - 0.5) * tremor, estado.camera.y + (Math.random() - 0.5) * tremor, 4);
+    estado.explosao *= Math.exp(-dt * 1.7);
+    if (estado.explosao < 0.001) estado.explosao = 0;
+    const e = estado.explosao;
+    const fov = estado.fovBase + e * 32;
+    if (Math.abs(camera.fov - fov) > 0.01) {
+      camera.fov = fov;
+      camera.updateProjectionMatrix();
+    }
     camera.lookAt(estado.camera.alvoX, estado.camera.alvoY, -22);
     camera.rotation.z += -estado.camera.x * 0.045 * (1 - estado.ordem); // leve inclinação nas curvas
 
@@ -205,9 +219,10 @@ export function criarTunel(canvas, { movel = false, reduzido = false } = {}) {
     for (let i = 0; i < total; i += 1) {
       z[i] += v * dt;
       if (z[i] > 5) z[i] -= COMPRIMENTO;
-      boneco.position.set(lerp(caosX[i], ordemX[i], o), lerp(caosY[i], ordemY[i], o), z[i]);
+      const abre = 1 + e * 4.5; // explosão: as luzes são lançadas para fora do corredor
+      boneco.position.set(lerp(caosX[i], ordemX[i], o) * abre, lerp(caosY[i], ordemY[i], o) * abre, z[i]);
       boneco.rotation.set(inclinacaoX[i] * (1 - o), inclinacaoY[i] * (1 - o), 0);
-      boneco.scale.set(espessura[i], espessura[i], comprimento[i] * esticar);
+      boneco.scale.set(espessura[i] * (1 + e), espessura[i] * (1 + e), comprimento[i] * esticar * (1 + e * 1.5));
       boneco.updateMatrix();
       feixes.setMatrixAt(i, boneco.matrix);
     }
@@ -220,7 +235,9 @@ export function criarTunel(canvas, { movel = false, reduzido = false } = {}) {
     materialPortico.opacity = 0.1 + o * 0.5;
     material.opacity = 0.95 - o * 0.25;
     cena.fog.density = 0.034 - o * 0.012;
-    brilho.material.opacity = 0.85 - p * 0.35;
+    brilho.material.opacity = limitar(0.85 - p * 0.35 + e * 0.6, 0, 1);
+    const tamanho = 46 * (1 + e * 3.5);
+    brilho.scale.set(tamanho, tamanho, 1);
   }
 
   let anterior = 0;
@@ -272,6 +289,13 @@ export function criarTunel(canvas, { movel = false, reduzido = false } = {}) {
     setAlvo({ velocidade, ordem }) {
       if (typeof velocidade === "number") estado.velocidadeAlvo = velocidade;
       if (typeof ordem === "number") estado.ordemAlvo = limitar(ordem, 0, 1);
+    },
+    /** Velocidade imediata (aceleração conduzida pela linha do tempo do hero). */
+    setVelocidade(v) {
+      estado.velocidade = estado.velocidadeAlvo = Math.max(0, v);
+    },
+    explodir() {
+      if (!reduzido) estado.explosao = 1;
     },
     setProgresso(p) {
       estado.progresso = limitar(p, 0, 1);

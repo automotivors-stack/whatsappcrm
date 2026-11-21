@@ -6,13 +6,25 @@
 
 import { useEffect, useRef, useState } from "react";
 
+// Cada frase em linhas (a última em gradiente) e quanto tempo fica na tela para ser lida.
 const FRASES = [
-  { forte: "Talento", resto: "abre caminhos.", cena: { velocidade: 22, ordem: 0 } },
-  { forte: "Persistência", resto: "move.", cena: { velocidade: 40, ordem: 0 } },
-  { forte: "Organização", resto: "dá direção.", cena: { velocidade: 20, ordem: 0.42 } },
-  { forte: "Inteligência", resto: "acelera.", cena: { velocidade: 34, ordem: 0.2 } },
+  {
+    linhas: ["A escala dos seus", "resultados comerciais", "passa pela Let\u2019s Touch Base."],
+    leitura: 1.9,
+    cena: { velocidade: 22, ordem: 0 },
+  },
+  { linhas: ["Tudo se inicia", "com uma conversa."], leitura: 1.3, cena: { velocidade: 30, ordem: 0.12 } },
+  {
+    linhas: ["A inteligência, organização", "e o talento de sua equipe", "levam a seus objetivos."],
+    leitura: 2.1,
+    cena: { velocidade: 20, ordem: 0.45 },
+  },
 ];
-const CENA_CRUZEIRO = { velocidade: 24, ordem: 0.08 };
+const TEXTO_FRASES = FRASES.map((f) => f.linhas.join(" ")).join(" ");
+// Quarta etapa: o túnel acelera de 1x (VELOCIDADE_BASE) a 5x e explode; a assinatura nasce do clarão.
+const VELOCIDADE_BASE = 24;
+const ACELERACAO = 1.9; // segundos de 100% a 500%
+const CENA_CRUZEIRO = { velocidade: VELOCIDADE_BASE, ordem: 0.08 };
 
 export default function CinematicHero() {
   const secao = useRef(null);
@@ -21,6 +33,7 @@ export default function CinematicHero() {
   const marca = useRef(null);
   const transicao = useRef(null);
   const aviso = useRef(null);
+  const clarao = useRef(null);
   const sensor = useRef(null); // ouvinte do giroscópio (opcional, só quando o visitante ativa)
   const [estado, setEstado] = useState("inicial"); // inicial | animado | estatico
   const [semWebgl, setSemWebgl] = useState(false);
@@ -104,29 +117,52 @@ export default function CinematicHero() {
 
             // Sequência: cada frase entra por máscara e muda o ritmo da cena.
             const intro = gsap.timeline({ defaults: { ease: "power3.out" } });
-            // Ritmo em tempos absolutos (~6,5 s até a assinatura completa): cada frase entra 0,15 s
-            // depois de a anterior começar a sair. A primeira já entrou pelo CSS.
+            // Ritmo em tempos absolutos: cada frase fica o tempo de ser lida (FRASES[i].leitura) e a
+            // seguinte entra 0,15 s depois de a anterior começar a sair. A primeira já entrou pelo CSS.
             const ENTRADA = 0.6;
-            const PERMANENCIA = 0.7;
             const SAIDA = 0.45;
             let inicio = 0;
+            let pulou = false;
             frases.forEach((frase, i) => {
               if (i > 0) {
                 intro.set(frase, { autoAlpha: 1 }, inicio);
                 intro.fromTo(linhas(frase), { yPercent: 110 }, { yPercent: 0, duration: ENTRADA, stagger: 0.06 }, inicio);
               }
               intro.call(() => tunel?.setAlvo(FRASES[i].cena), null, inicio);
-              const saida = i === 0 ? 1.35 : inicio + ENTRADA + PERMANENCIA;
+              const saida = (i === 0 ? 0.5 : inicio + ENTRADA) + FRASES[i].leitura;
               intro.to(linhas(frase), { yPercent: -110, duration: SAIDA, stagger: 0.04, ease: "power2.in" }, saida);
               intro.set(frase, { autoAlpha: 0 }, saida + SAIDA + 0.05);
               inicio = saida + 0.15;
             });
-            intro.call(() => tunel?.setAlvo(CENA_CRUZEIRO), null, inicio);
-            intro.to(marca.current, { autoAlpha: 1, y: 0, duration: 0.9 }, inicio);
+
+            // Quarta etapa: aceleração de 100% a 500%, explosão e a assinatura saindo do clarão.
+            const giro = { v: VELOCIDADE_BASE };
+            intro.call(() => tunel?.setAlvo({ ordem: 0.55 }), null, inicio);
+            intro.fromTo(
+              giro,
+              { v: VELOCIDADE_BASE },
+              { v: VELOCIDADE_BASE * 5, duration: ACELERACAO, ease: "power2.in", onUpdate: () => !pulou && tunel?.setVelocidade(giro.v) },
+              inicio,
+            );
+            const explosao = inicio + ACELERACAO;
+            intro.call(() => {
+              if (pulou) return;
+              tunel?.explodir();
+              tunel?.setAlvo(CENA_CRUZEIRO); // depois do clarão, desacelera sozinho até o cruzeiro
+            }, null, explosao);
+            intro.fromTo(clarao.current, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.12, ease: "power2.out" }, explosao);
+            intro.to(clarao.current, { autoAlpha: 0, duration: 1.1, ease: "power2.out" }, explosao + 0.12);
+            intro.to(marca.current, { autoAlpha: 1, y: 0, duration: 0.9 }, explosao + 0.1);
             intro.from(marca.current.querySelectorAll("[data-entrar]"), { autoAlpha: 0, y: 18, stagger: 0.1, duration: 0.7 }, "<0.1");
 
-            // Quem rola antes do fim pula direto para a assinatura (não perde os CTAs).
-            const pular = () => { if (intro.progress() < 1) intro.progress(1); };
+            // Quem rola antes do fim pula direto para a assinatura (não perde os CTAs), sem clarão.
+            const pular = () => {
+              if (intro.progress() >= 1) return;
+              pulou = true;
+              intro.progress(1);
+              tunel?.setVelocidade(VELOCIDADE_BASE);
+              tunel?.setAlvo(CENA_CRUZEIRO);
+            };
 
             // Transição: o hero fica fixo enquanto a rolagem desacelera e organiza a cena.
             const mm = gsap.matchMedia();
@@ -205,26 +241,29 @@ export default function CinematicHero() {
         className={`absolute inset-0 -z-10 h-full w-full transition-opacity duration-1000 ${semWebgl ? "hidden" : ""}`}
       />
       <div aria-hidden="true" className="ltb-hero-vinheta pointer-events-none absolute inset-0 -z-10" />
+      {/* Clarão da explosão (um único flash suave, sem piscar repetido). */}
+      <div ref={clarao} aria-hidden="true" className="ltb-clarao pointer-events-none absolute inset-0 z-[5]" />
 
       <div className="relative z-10 mx-auto flex h-full max-w-7xl flex-col justify-center px-5 sm:px-10">
         {/* Sequência editorial (decorativa para leitores de tela; o texto completo vem abaixo, oculto). */}
         <div ref={sequencia} aria-hidden="true" className="ltb-sequencia absolute inset-x-5 top-1/2 -translate-y-1/2 sm:inset-x-10">
           {FRASES.map((f, i) => (
-            <p key={f.forte} className={`ltb-frase absolute inset-x-0 -translate-y-1/2 ${i === 0 ? "ltb-frase-primeira" : ""}`}>
-              <span className="ltb-linha block overflow-hidden pb-[0.08em]">
-                <span className="block font-ltb-titulo text-[clamp(2.6rem,9vw,8.25rem)] font-extrabold uppercase leading-[0.92] tracking-[-0.035em]">
-                  {f.forte}
+            <p key={f.linhas[0]} className={`ltb-frase absolute inset-x-0 -translate-y-1/2 ${i === 0 ? "ltb-frase-primeira" : ""}`}>
+              {f.linhas.map((linha, j) => (
+                <span key={linha} className="ltb-linha block overflow-hidden pb-[0.1em]">
+                  <span
+                    className={`block font-ltb-titulo text-[clamp(2rem,5.4vw,5rem)] font-extrabold leading-[1.02] tracking-[-0.035em] ${
+                      j === f.linhas.length - 1 ? "ltb-gradiente-texto" : ""
+                    }`}
+                  >
+                    {linha}
+                  </span>
                 </span>
-              </span>
-              <span className="ltb-linha block overflow-hidden pb-[0.08em]">
-                <span className="ltb-gradiente-texto block font-ltb-titulo text-[clamp(2.1rem,7vw,6.5rem)] font-extrabold uppercase leading-[0.95] tracking-[-0.03em]">
-                  {f.resto}
-                </span>
-              </span>
+              ))}
             </p>
           ))}
         </div>
-        <p className="ltb-frases-estaticas">Talento abre caminhos. Persistência move. Organização dá direção. Inteligência acelera.</p>
+        <p className="ltb-frases-estaticas">{TEXTO_FRASES}</p>
 
         {/* Assinatura e CTAs */}
         <div ref={marca} className="ltb-marca max-w-3xl">
