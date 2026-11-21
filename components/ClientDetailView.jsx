@@ -5,7 +5,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { FASES, FASES_OPERACAO, exigeFornecedor } from "../lib/kanban.js";
-import { FORNECEDORES, KLUUBPAY, PUSHIN_PAY, VERSAO_TABELA_CUSTOS } from "../lib/custosParceiros.js";
+import { FORNECEDORES, KLUUBPAY, PUSHIN_PAY, VERSAO_TABELA_CUSTOS, itemDeCusto, rotuloVersaoTabela } from "../lib/custosParceiros.js";
 import { linhasDaMesa } from "../lib/precificacao.js";
 import { comSinal, dataHora, dinheiro, lerDecimal, paraCampo, percentual } from "../lib/formato.js";
 import { normalizarTelefoneBR } from "../lib/telefone.js";
@@ -78,6 +78,7 @@ function campoInicialPrecificacao(lead) {
   if (!p || p.fornecedor !== lead.fornecedor_operacao) return { valorReferencia: "", itens: {} };
   const itens = {};
   for (const [id, v] of Object.entries(p.itens ?? {})) {
+    if (!itemDeCusto(lead.fornecedor_operacao, id)) continue; // produto que saiu da tabela
     itens[id] = { percentual: paraCampo(v.percentual), fixo: paraCampo(v.fixo) };
   }
   return { valorReferencia: paraCampo(p.valor_referencia), itens };
@@ -417,12 +418,12 @@ export default function ClientDetailView({ leadId, faseDesejada, onFechar, onAtu
                         />
                       </label>
                       <p className="max-w-md text-xs text-slate-500">
-                        Opcional. Com ele, o spread também aparece em reais por transação. Tabela de custo de {VERSAO_TABELA_CUSTOS.split("-").reverse().join("/")}.
+                        Opcional. Com ele, o spread também aparece em reais por transação. Tabela de custo de {rotuloVersaoTabela(VERSAO_TABELA_CUSTOS)}.
                       </p>
                     </div>
                     {versaoAntiga && (
                       <p className="mb-3 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900">
-                        Esta precificação foi salva com a tabela de {lead.dados_precificacao.versao_tabela}. Os custos abaixo já são os atuais.
+                        Esta precificação foi salva com a tabela de {rotuloVersaoTabela(lead.dados_precificacao.versao_tabela)}. Os custos abaixo já são os atuais.
                       </p>
                     )}
                     {camposInvalidos && <p className="mb-3 text-sm text-red-700">Há valores inválidos. Use números, por exemplo 1,25.</p>}
