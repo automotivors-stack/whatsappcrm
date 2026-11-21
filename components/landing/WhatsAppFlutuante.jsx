@@ -2,25 +2,18 @@
 
 // Botão flutuante de WhatsApp: aparece depois do hero (quando ele sai da tela) e some de novo se a pessoa voltar ao topo,
 // para não disputar atenção com a abertura. Abre a conversa com o especialista numa aba nova (WHATSAPP_URL).
-// Marca: pílula navy com texto claro; o verde fica só no ícone (o manual não usa verde como ação primária).
+// Só o símbolo do WhatsApp num círculo verde (pedido do time); o nome acessível diz "Fale com um especialista".
 
 import { useEffect, useState } from "react";
 import { WHATSAPP_URL } from "../../content/contato.js";
 
-function IconeConversa() {
-  // balão de conversa com um fone dentro, desenhado aqui (sem logotipo de terceiros)
+function SimboloWhatsApp() {
+  // o símbolo do WhatsApp (o fone dentro do balão), desenhado aqui
   return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" className="h-5 w-5">
+    <svg viewBox="0 0 32 32" aria-hidden="true" focusable="false" className="h-8 w-8">
       <path
-        d="M12 3.2a8.8 8.8 0 0 0-7.6 13.2L3.3 20.7l4.4-1.1A8.8 8.8 0 1 0 12 3.2Z"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M9.2 8.3c.2-.4.5-.4.7-.4h.5c.2 0 .4.1.5.4l.7 1.6c.1.2 0 .5-.1.6l-.5.6c.6 1.2 1.6 2.1 2.8 2.7l.6-.6c.2-.2.4-.2.6-.1l1.6.7c.3.1.4.3.4.6v.5c0 .3-.1.6-.4.8-.5.4-1.2.6-1.9.5-2.9-.5-5.3-2.9-5.8-5.8-.1-.7.1-1.5.3-2.1Z"
         fill="currentColor"
+        d="M16 3.5C9.1 3.5 3.5 9.1 3.5 16c0 2.4.7 4.7 1.9 6.6L3.6 28.5l6.1-1.6c1.9 1 4 1.6 6.3 1.6 6.9 0 12.5-5.6 12.5-12.5S22.9 3.5 16 3.5Zm0 22.8c-2 0-3.9-.5-5.6-1.5l-.4-.2-3.6.9 1-3.5-.3-.4A10.2 10.2 0 0 1 5.8 16C5.8 10.4 10.4 5.8 16 5.8S26.2 10.4 26.2 16 21.6 26.3 16 26.3Zm5.6-7.6c-.3-.2-1.8-.9-2.1-1-.3-.1-.5-.2-.7.2-.2.3-.8 1-1 1.2-.2.2-.4.2-.7.1-.3-.2-1.3-.5-2.5-1.5-.9-.8-1.5-1.8-1.7-2.1-.2-.3 0-.5.1-.6l.5-.5c.2-.2.2-.3.3-.5.1-.2.1-.4 0-.6l-1-2.4c-.3-.6-.5-.5-.7-.5h-.6c-.2 0-.6.1-.9.4-.3.3-1.2 1.1-1.2 2.8s1.2 3.2 1.4 3.5c.2.2 2.4 3.7 5.8 5.1.8.4 1.4.6 1.9.7.8.3 1.5.2 2.1.1.6-.1 1.8-.7 2.1-1.5.3-.7.3-1.4.2-1.5-.1-.1-.3-.2-.6-.3Z"
       />
     </svg>
   );
@@ -66,17 +59,15 @@ export default function WhatsAppFlutuante() {
       href={WHATSAPP_URL}
       target="_blank"
       rel="noopener noreferrer"
+      aria-label="Fale com um especialista pelo WhatsApp (abre em nova aba)"
+      title="Fale com um especialista"
       aria-hidden={!visivel || undefined}
       tabIndex={visivel ? 0 : -1}
-      className={`ltb-whatsapp fixed z-40 inline-flex min-h-12 items-center gap-2.5 rounded-full border border-white/15 bg-ltb-navy py-2 pl-2 pr-5 text-sm font-semibold text-white shadow-[0_14px_34px_-12px_rgba(5,13,31,0.75)] transition-[opacity,transform,background-color] duration-300 hover:bg-[#132b5c] ${
+      className={`ltb-whatsapp fixed z-40 grid h-14 w-14 place-items-center rounded-full bg-ltb-green text-white shadow-[0_14px_30px_-10px_rgba(5,13,31,0.8)] ring-1 ring-black/10 transition-[opacity,transform,filter] duration-300 hover:brightness-105 ${
         visivel ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-4 opacity-0"
       }`}
     >
-      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-ltb-green text-ltb-navy-deep">
-        <IconeConversa />
-      </span>
-      Fale com um especialista
-      <span className="sr-only"> pelo WhatsApp (abre em nova aba)</span>
+      <SimboloWhatsApp />
     </a>
   );
 }
