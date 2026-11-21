@@ -55,6 +55,7 @@ Resend (e-mail) · Anthropic (`@anthropic-ai/sdk`, IA do diagnóstico). Gerencia
   `tests/acessoPublico.test.js` mapeia todas as rotas e falha se algo novo abrir sem autenticação
 - Landing pública: `app/(site)/page.jsx` + `components/landing/` (hero WebGL em `tunel.js`, GSAP/ScrollTrigger,
   modo estático para `prefers-reduced-motion` e sem JS). Não lê banco nem dados do CRM. Plano: `docs/landing.md`
+- `components/ui/works-wheel.jsx` (roda de cartões, usada no bloco de pilares): copiado de prompt externo; não reformatar
 
 ## Regras de negócio (nunca quebrar; cada uma tem teste)
 

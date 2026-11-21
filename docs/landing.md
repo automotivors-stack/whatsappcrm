@@ -6,6 +6,15 @@
   As seções "A plataforma" e "Demonstração" são marcadores honestos ("em construção"); nada simula envio.
 - **Próximas:** seções 3 a 13 do Master Prompt e o formulário de pré-triagem (etapa 2).
 
+## Bloco "pilares" (roda)
+- `components/landing/PilaresRoda.jsx` usa a roda de `components/ui/works-wheel.jsx` (Works Wheel, ProfitizeBuild,
+  convertida para .jsx só tirando as anotações de tipo; o arquivo não deve ser reformatado nem "melhorado").
+- As quatro frases (Talento abre caminhos, Persistência move, Organização dá direção, Inteligência acelera) são cartões
+  em SVG gerados no próprio componente: nada em `/public` (ficaria atrás da senha do `proxy.js`) e nada externo.
+- Cores e fonte da marca entram pelas props (`style` com as variáveis `--ww-*`), sem mexer no componente.
+- A demo do prompt (página `/obras` com capas do Unsplash) não foi criada: seria uma rota nova atrás da senha e com
+  imagens que não são da marca.
+
 ## Segurança
 - Rota pública só `GET`/`HEAD /` (`ROTAS_PUBLICAS` em `proxy.js`); o restante do CRM segue com HTTP Basic.
 - A landing não importa serviços, banco nem variáveis de ambiente do servidor.
