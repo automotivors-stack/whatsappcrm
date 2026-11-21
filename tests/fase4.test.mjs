@@ -140,7 +140,8 @@ test("proposta: só taxas negociadas, nunca custo base nem spread", () => {
   assert.match(w.texto, /\*Pix In \(D0\)\*/);
   assert.match(w.texto, /Faixa 2: acima de R\$ 600,00 até R\$ 2\.000,00: 0,99% \+ R\$\s0,50/);
   assert.match(w.texto, /• R\$\s1,50/);
-  assert.match(w.texto, /Débito: 5,10%/);
+  assert.match(w.texto, /Débito: 5,10%\nBandeiras aceitas: Visa e Mastercard\./);
+  assert.ok(!/Pix In[^*]*Bandeiras/.test(w.texto), "bandeiras só nos grupos de cartão");
   // custos da Pushin Pay para esses itens: 0,70% + 0,35 · 1,20 · 4,52% + 0,35
   for (const custo of ["0,70%", "1,20", "4,52%", "0,35"]) assert.ok(!w.texto.includes(custo), `vazou custo ${custo}`);
   const e = montarProposta(lead, "email");
