@@ -11,11 +11,19 @@ function iguais(a, b) {
   return diferenca === 0;
 }
 
+function recusar(request, status, mensagem, cabecalhos = {}) {
+  // Rotas de API respondem no padrão { error }; páginas, em texto.
+  const ehApi = new URL(request.url).pathname.startsWith("/api/");
+  return ehApi
+    ? Response.json({ error: mensagem }, { status, headers: cabecalhos })
+    : new Response(mensagem, { status, headers: cabecalhos });
+}
+
 export function proxy(request) {
   const usuario = process.env.CRM_USUARIO;
   const senha = process.env.CRM_SENHA;
   if (!usuario || !senha) {
-    return new Response("Acesso não configurado: defina CRM_USUARIO e CRM_SENHA.", { status: 503 });
+    return recusar(request, 503, "Acesso não configurado: defina CRM_USUARIO e CRM_SENHA.");
   }
 
   const cabecalho = request.headers.get("authorization") ?? "";
@@ -35,10 +43,7 @@ export function proxy(request) {
       if (iguais(u, usuario) && iguais(s, senha)) return undefined; // segue para a rota
     }
   }
-  return new Response("Acesso restrito.", {
-    status: 401,
-    headers: { "WWW-Authenticate": 'Basic realm="CRM", charset="UTF-8"' },
-  });
+  return recusar(request, 401, "Acesso restrito.", { "WWW-Authenticate": 'Basic realm="CRM", charset="UTF-8"' });
 }
 
 export const config = {

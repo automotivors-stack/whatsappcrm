@@ -50,7 +50,13 @@ export default function PainelComunicacaoCliente({ lead, onEnviado }) {
     ? "Defina o fornecedor e salve a precificação para usar o atalho."
     : "Salve a precificação na mesa para usar o atalho.";
 
-  async function disparar(executar, confirmacao, aoConcluir) {
+  /**
+   * A chave de idempotência só é reaproveitada quando a requisição nem chegou ao servidor
+   * (queda de rede): aí repetir com a mesma chave não duplica o envio. Se o servidor respondeu,
+   * o próximo envio usa chave nova (o OpenWA recusa a mesma chave com outro texto, e uma chave
+   * "incerta" fica travada por 24 h).
+   */
+  async function disparar(executar, confirmacao, aoConcluir, trocarChave) {
     if (!window.confirm(confirmacao)) return;
     setEnviando(true);
     setRetorno(null);
@@ -61,7 +67,9 @@ export default function PainelComunicacaoCliente({ lead, onEnviado }) {
       setRetorno({ tipo: "ok", texto: canal === "whatsapp" ? "WhatsApp enviado." : "E-mail enviado." });
     } catch (e) {
       if (e.dados?.interacao) onEnviado(e.dados.interacao); // a falha também vai para a linha do tempo
-      setRetorno({ tipo: "erro", texto: e.message });
+      if (e.status) trocarChave();
+      const incerto = e.dados?.interacao?.status_envio === "incerto";
+      setRetorno({ tipo: incerto ? "atencao" : "erro", texto: e.message });
     } finally {
       setEnviando(false);
     }
@@ -76,6 +84,7 @@ export default function PainelComunicacaoCliente({ lead, onEnviado }) {
         setMensagem("");
         setChaveWhats(novaChave());
       },
+      () => setChaveWhats(novaChave()),
     );
   }
 
@@ -92,6 +101,7 @@ export default function PainelComunicacaoCliente({ lead, onEnviado }) {
         setCorpo("");
         setChaveEmail(novaChave());
       },
+      () => setChaveEmail(novaChave()),
     );
   }
 
@@ -184,9 +194,12 @@ export default function PainelComunicacaoCliente({ lead, onEnviado }) {
 
       {retorno && (
         <p
-          role={retorno.tipo === "erro" ? "alert" : "status"}
+          role={retorno.tipo === "ok" ? "status" : "alert"}
           className={`mt-3 rounded-md border px-3 py-2 text-sm ${
-            retorno.tipo === "erro" ? "border-red-300 bg-red-50 text-red-800" : "border-emerald-300 bg-emerald-50 text-emerald-800"
+            {
+              erro: "border-red-300 bg-red-50 text-red-800",
+              atencao: "border-amber-300 bg-amber-50 text-amber-900",
+            }[retorno.tipo] ?? "border-emerald-300 bg-emerald-50 text-emerald-800"
           }`}
         >
           {retorno.texto}

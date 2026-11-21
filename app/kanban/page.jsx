@@ -42,6 +42,14 @@ export default function KanbanPage() {
 
   useEffect(() => {
     carregar();
+    // Lead aprovado pelo WhatsApp com o Kanban aberto: aparece quando o consultor volta à aba.
+    const aoVoltar = () => document.visibilityState === "visible" && carregar();
+    document.addEventListener("visibilitychange", aoVoltar);
+    window.addEventListener("focus", aoVoltar);
+    return () => {
+      document.removeEventListener("visibilitychange", aoVoltar);
+      window.removeEventListener("focus", aoVoltar);
+    };
   }, [carregar]);
 
   useEffect(() => {

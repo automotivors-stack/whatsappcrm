@@ -13,7 +13,13 @@ function resend() {
   return cliente;
 }
 
-export class FalhaEmail extends Error {}
+export class FalhaEmail extends Error {
+  constructor(mensagem, { status, nome } = {}) {
+    super(mensagem);
+    this.status = status;
+    this.nome = nome; // ex.: "concurrent_idempotent_requests", "validation_error"
+  }
+}
 
 /**
  * @param {{ para: string, assunto: string, html: string, texto?: string, idempotencyKey?: string }} email
@@ -29,7 +35,10 @@ export async function enviarEmail({ para, assunto, html, texto, idempotencyKey }
   );
   if (error || !data?.id) {
     // Mensagem do Resend (ex.: domínio não verificado); nunca o conteúdo do e-mail.
-    throw new FalhaEmail(`Resend recusou o envio${error?.statusCode ? ` (HTTP ${error.statusCode})` : ""}: ${error?.message ?? "sem detalhe"}`);
+    throw new FalhaEmail(
+      `Resend recusou o envio${error?.statusCode ? ` (HTTP ${error.statusCode})` : ""}: ${error?.message ?? "sem detalhe"}`,
+      { status: error?.statusCode, nome: error?.name },
+    );
   }
   return { id: data.id };
 }

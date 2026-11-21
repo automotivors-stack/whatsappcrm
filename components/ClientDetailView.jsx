@@ -7,7 +7,8 @@ import { useEffect, useMemo, useState } from "react";
 import { FASES, FASES_OPERACAO, exigeFornecedor } from "../lib/kanban.js";
 import { FORNECEDORES, KLUUBPAY, PUSHIN_PAY, VERSAO_TABELA_CUSTOS } from "../lib/custosParceiros.js";
 import { linhasDaMesa } from "../lib/precificacao.js";
-import { comSinal, dinheiro, lerDecimal, paraCampo, percentual, soDigitos } from "../lib/formato.js";
+import { comSinal, dataHora, dinheiro, lerDecimal, paraCampo, percentual } from "../lib/formato.js";
+import { normalizarTelefoneBR } from "../lib/telefone.js";
 import { buscarDossie, patchLead } from "../lib/apiLeads.js";
 import { htmlParaTexto } from "../lib/proposta.js";
 import PainelComunicacaoCliente from "./PainelComunicacaoCliente.jsx";
@@ -239,7 +240,8 @@ export default function ClientDetailView({ leadId, faseDesejada, onFechar, onAtu
   }, [linhas]);
 
   const emOperacao = lead && FASES_OPERACAO.includes(lead.status_kanban);
-  const whatsapp = lead ? soDigitos(lead.whatsapp_contato || lead.phone_number) : "";
+  // Mesmo formato do disparo: "(21) 98888-7777" vira 5521988887777 (senão o wa.me abre sem o 55).
+  const whatsapp = lead ? normalizarTelefoneBR(lead.whatsapp_contato) ?? normalizarTelefoneBR(lead.phone_number) ?? "" : "";
   const versaoAntiga = lead?.dados_precificacao && lead.dados_precificacao.versao_tabela !== VERSAO_TABELA_CUSTOS;
 
   return (
@@ -564,7 +566,7 @@ export default function ClientDetailView({ leadId, faseDesejada, onFechar, onAtu
                       return (
                         <li key={m.id} className={`flex ${doCliente ? "justify-start" : "justify-end"}`}>
                           <div className={`max-w-[80%] rounded-lg px-3 py-2 text-sm ${doCliente ? "bg-white border border-slate-200 text-slate-800" : "bg-emerald-50 border border-emerald-200 text-slate-800"}`}>
-                            <p className="text-xs text-slate-500">{doCliente ? "Cliente" : "IA"} · {m.created_at}</p>
+                            <p className="text-xs text-slate-500">{doCliente ? "Cliente" : "IA"} · {dataHora(m.created_at)}</p>
                             <p className="whitespace-pre-wrap break-words">{m.content}</p>
                           </div>
                         </li>
@@ -581,12 +583,14 @@ export default function ClientDetailView({ leadId, faseDesejada, onFechar, onAtu
                 ) : (
                   <ol className="flex flex-col gap-3">
                     {interacoes.map((i) => (
-                      <li key={i.id} className={`border-l-2 pl-3 ${i.status_envio === "falha" ? "border-red-300" : "border-slate-300"}`}>
+                      <li key={i.id} className={`border-l-2 pl-3 ${{ falha: "border-red-300", incerto: "border-amber-300" }[i.status_envio] ?? "border-slate-300"}`}>
                         <p className="text-xs text-slate-500">
-                          {i.created_at} · {ROTULO_INTERACAO[i.tipo] ?? i.tipo ?? "interação"}
+                          {dataHora(i.created_at)} · {ROTULO_INTERACAO[i.tipo] ?? i.tipo ?? "interação"}
                           {i.destinatario ? ` · ${i.destinatario}` : ""}
                           {i.status_envio && i.status_envio !== "sucesso" && (
-                            <span className="ml-1 rounded bg-red-50 px-1 font-medium text-red-700">{i.status_envio === "falha" ? "falhou" : i.status_envio}</span>
+                            <span className={`ml-1 rounded px-1 font-medium ${i.status_envio === "incerto" ? "bg-amber-50 text-amber-800" : "bg-red-50 text-red-700"}`}>
+                              {{ falha: "falhou", incerto: "envio incerto: confira" }[i.status_envio] ?? i.status_envio}
+                            </span>
                           )}
                         </p>
                         {i.assunto && <p className="text-sm font-medium text-slate-900">{i.assunto}</p>}

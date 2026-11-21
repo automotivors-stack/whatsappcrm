@@ -33,6 +33,31 @@ function chaveIdempotencia(valor) {
   return valor;
 }
 
+export const STATUS_INCERTO = "incerto";
+const AVISO_INCERTO = "confira a conversa antes de reenviar.";
+
+/**
+ * "falha": com certeza não saiu. "incerto": pode ter saído (tempo esgotado ou o gateway avisou
+ * que o resultado é desconhecido): o consultor confere antes de reenviar.
+ */
+export function classificarFalhaWhatsApp(e) {
+  if (e?.name === "TimeoutError" || e?.code === "IDEMPOTENCY_OUTCOME_UNKNOWN" || e?.code === "IDEMPOTENCY_KEY_IN_PROGRESS") {
+    return { status: STATUS_INCERTO, texto: `Não dá para saber se o WhatsApp saiu: ${AVISO_INCERTO}` };
+  }
+  if (e?.code === "SEND_PACING_LIMITED") {
+    const espera = e.retryAfterSeconds ? `${e.retryAfterSeconds} segundos` : "alguns instantes";
+    return { status: "falha", texto: `O WhatsApp não foi enviado: limite de ritmo de envios. Tente de novo em ${espera}.` };
+  }
+  return { status: "falha", texto: `O WhatsApp não foi enviado. ${e?.message ?? ""}`.trim() };
+}
+
+export function classificarFalhaEmail(e) {
+  if (e?.name === "TimeoutError" || e?.nome === "concurrent_idempotent_requests") {
+    return { status: STATUS_INCERTO, texto: `Não dá para saber se o e-mail saiu: ${AVISO_INCERTO}` };
+  }
+  return { status: "falha", texto: `O e-mail não foi enviado. ${e?.message ?? ""}`.trim() };
+}
+
 async function carregarOportunidade(db, id) {
   const { rows } = await db.execute({
     sql: "SELECT id, phone_number, whatsapp_contato, email_contato FROM oportunidades WHERE id = ?",
@@ -84,8 +109,9 @@ export async function dispararWhatsApp(ctx, entrada) {
     resposta = await ctx.enviar(chatIdDoTelefone(telefone), mensagem, chave ? { idempotencyKey: `wa-${chave}` } : {});
   } catch (e) {
     console.warn(`[comunicacao] WhatsApp para ${mascarar(telefone)} falhou: ${e?.message ?? e}`);
-    const interacao = await registrar(ctx.db, { ...dados, status: "falha" });
-    throw new ErroLeads(`O WhatsApp não foi enviado. ${e?.message ?? ""}`.trim(), 502, { interacao });
+    const { status, texto } = classificarFalhaWhatsApp(e);
+    const interacao = await registrar(ctx.db, { ...dados, status });
+    throw new ErroLeads(texto, 502, { interacao });
   }
   const interacao = await registrarSucesso(ctx.db, dados, "WhatsApp");
   return { success: true, messageId: resposta?.messageId ?? null, interacao };
@@ -122,8 +148,9 @@ export async function dispararEmail(ctx, entrada) {
     });
   } catch (e) {
     console.warn(`[comunicacao] e-mail falhou: ${e?.message ?? e}`);
-    const interacao = await registrar(ctx.db, { ...dados, status: "falha" });
-    throw new ErroLeads(`O e-mail não foi enviado. ${e?.message ?? ""}`.trim(), 502, { interacao });
+    const { status, texto } = classificarFalhaEmail(e);
+    const interacao = await registrar(ctx.db, { ...dados, status });
+    throw new ErroLeads(texto, 502, { interacao });
   }
   const interacao = await registrarSucesso(ctx.db, dados, "E-mail");
   return { success: true, emailId: resposta?.id ?? null, interacao };

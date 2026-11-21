@@ -2,6 +2,15 @@
 // POST {OPENWA_BASE_URL}/api/sessions/{OPENWA_SESSION_ID}/messages/send-text
 // Cabeçalho X-API-Key; corpo { chatId, text } (o OpenWA recusa campos extras com 400).
 
+export class FalhaWhatsApp extends Error {
+  constructor(mensagem, { status, code, retryAfterSeconds } = {}) {
+    super(mensagem);
+    this.status = status;
+    this.code = code;
+    this.retryAfterSeconds = retryAfterSeconds;
+  }
+}
+
 const LIMITE_TEXTO = 4096; // limite do campo `text` no OpenWA
 const TEMPO_LIMITE_MS = 15_000;
 
@@ -42,8 +51,15 @@ export async function enviarMensagemWhatsApp(chatId, texto, opcoes = {}) {
   });
 
   if (!resposta.ok) {
-    // Não incluir o texto nem o telefone no erro: ele vai para o log.
-    throw new Error(`OpenWA recusou o envio (HTTP ${resposta.status}).`);
+    // O OpenWA manda { statusCode, message, error, code? }. Guardamos só status e código:
+    // o texto e o telefone nunca entram no erro, que vai para o log.
+    const corpo = await resposta.json().catch(() => ({}));
+    const code = typeof corpo?.code === "string" ? corpo.code : undefined;
+    throw new FalhaWhatsApp(`OpenWA recusou o envio (HTTP ${resposta.status}${code ? `, ${code}` : ""}).`, {
+      status: resposta.status,
+      code,
+      retryAfterSeconds: Number.isFinite(corpo?.retryAfterSeconds) ? corpo.retryAfterSeconds : undefined,
+    });
   }
   return resposta.json().catch(() => ({}));
 }

@@ -21,18 +21,18 @@ export async function receberWebhook(request, { segredo, agendar, processar }) {
   if (!segredo) {
     // Sem segredo não dá para distinguir o OpenWA de um terceiro forjando um "SIM" do consultor.
     console.error("[webhook] OPENWA_WEBHOOK_SECRET não configurado; evento recusado");
-    return Response.json({ ok: false }, { status: 503 });
+    return Response.json({ error: "Webhook não configurado." }, { status: 503 });
   }
   const corpo = await request.text();
   if (!assinaturaValida(corpo, request.headers.get("x-openwa-signature"), segredo)) {
-    return Response.json({ ok: false }, { status: 401 });
+    return Response.json({ error: "Assinatura inválida." }, { status: 401 });
   }
 
   let payload;
   try {
     payload = JSON.parse(corpo);
   } catch {
-    return Response.json({ ok: false }, { status: 400 });
+    return Response.json({ error: "JSON inválido." }, { status: 400 });
   }
 
   agendar(async () => {
