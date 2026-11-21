@@ -43,14 +43,14 @@ function Opcoes({ legenda, nome, opcoes, valor, aoEscolher }) {
           return (
             <label
               key={opcao}
-              className={`flex min-h-14 cursor-pointer items-center gap-3 rounded-[12px] border px-4 py-3 text-sm transition-colors has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-white ${
-                marcada ? "border-white bg-white font-semibold text-ltb-navy" : "border-white/35 bg-white/5 text-white hover:bg-white/10"
+              className={`flex min-h-14 cursor-pointer items-center gap-3 rounded-[12px] border px-4 py-3 text-sm transition-colors has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-ltb-blue-soft ${
+                marcada ? "border-ltb-blue bg-ltb-blue/20 font-semibold text-white" : "border-white/15 bg-white/[0.04] text-slate-200 hover:border-white/30 hover:bg-white/[0.07]"
               }`}
             >
               <input type="radio" name={nome} value={opcao} checked={marcada} onChange={() => aoEscolher(opcao)} className="sr-only" />
               <span
                 aria-hidden="true"
-                className={`grid h-5 w-5 shrink-0 place-items-center rounded-full border ${marcada ? "border-ltb-blue bg-ltb-blue text-white" : "border-white/60"}`}
+                className={`grid h-5 w-5 shrink-0 place-items-center rounded-full border ${marcada ? "border-ltb-blue bg-ltb-blue text-white" : "border-slate-400"}`}
               >
                 {marcada && <Visto />}
               </span>
@@ -92,16 +92,16 @@ export default function FormularioDiagnostico() {
   };
 
   const campo =
-    "mt-2 block w-full rounded-[8px] border border-white/35 bg-white/10 px-4 py-3 text-base text-white placeholder:text-white/70 focus:border-white focus:outline-none focus:ring-2 focus:ring-white/60";
+    "mt-2 block w-full rounded-[8px] border border-white/15 bg-white/[0.05] px-4 py-3 text-base text-white placeholder:text-slate-400 focus:border-ltb-blue focus:outline-none focus:ring-2 focus:ring-ltb-blue/60";
 
   return (
-    <section id="demonstracao" aria-labelledby="diagnostico-titulo" className="scroll-mt-16 bg-ltb-blue px-5 py-20 text-white sm:px-10 sm:py-28">
+    <section id="demonstracao" aria-labelledby="diagnostico-titulo" className="scroll-mt-16 bg-ltb-navy-deep bg-[radial-gradient(70%_60%_at_85%_0%,rgba(37,99,235,0.22),transparent_70%),radial-gradient(60%_50%_at_0%_100%,rgba(11,31,68,0.9),transparent_70%)] px-5 py-20 text-white sm:px-10 sm:py-28">
       <div className="mx-auto max-w-5xl">
-        <p className="text-xs font-semibold uppercase tracking-[0.28em] text-blue-100">Diagnóstico comercial</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.28em] text-ltb-blue-soft">Diagnóstico comercial</p>
         <h2 id="diagnostico-titulo" className="mt-3 max-w-3xl font-ltb-titulo text-[clamp(2rem,4.8vw,3.5rem)] font-extrabold leading-[1.05] tracking-[-0.03em]">
           Vamos colocar previsibilidade na sua operação comercial?
         </h2>
-        <p className="mt-4 max-w-2xl text-blue-50">
+        <p className="mt-4 max-w-2xl text-slate-300">
           Responda em menos de um minuto e comece a conversa com um especialista já com o seu cenário em mãos.
         </p>
 
@@ -139,7 +139,7 @@ export default function FormularioDiagnostico() {
             </div>
             <div>
               <label htmlFor={`${id}-empresa`} className="text-sm font-medium">
-                Empresa <span className="font-normal text-blue-100">(opcional)</span>
+                Empresa <span className="font-normal text-slate-400">(opcional)</span>
               </label>
               <input
                 id={`${id}-empresa`}
@@ -154,9 +154,9 @@ export default function FormularioDiagnostico() {
             </div>
           </div>
 
-          <div className="rounded-[12px] border border-white/35 bg-white/5 p-5" aria-live="polite">
+          <div className="rounded-[12px] border border-white/10 bg-white/[0.04] p-5" aria-live="polite">
             <p className="text-sm font-semibold">Resumo</p>
-            <p className="mt-1 text-sm text-blue-50">
+            <p className="mt-1 text-sm text-slate-300">
               Prioridade: {prioridade || "não selecionada"} · Gargalo: {gargalo || "não selecionado"}
             </p>
           </div>
@@ -164,7 +164,7 @@ export default function FormularioDiagnostico() {
           <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
             <button
               type="submit"
-              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-white px-6 text-sm font-semibold text-ltb-navy shadow-[0_12px_30px_-14px_rgba(5,13,31,0.8)] transition hover:bg-blue-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+              className="ltb-botao-primario min-h-12 gap-2 px-6 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ltb-blue-soft"
             >
               Iniciar conversa com diagnóstico no WhatsApp
               <Seta />
@@ -174,7 +174,7 @@ export default function FormularioDiagnostico() {
               href={AGENDA_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-white/60 px-6 text-sm font-semibold text-white transition hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-white/25 px-6 text-sm font-semibold text-white transition hover:border-white/45 hover:bg-white/[0.06] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ltb-blue-soft"
             >
               <Calendario />
               Prefiro escolher um horário na agenda
@@ -186,7 +186,7 @@ export default function FormularioDiagnostico() {
             <p role="status" className="font-medium text-white">
               {aviso}
             </p>
-            <p className="text-blue-100">
+            <p className="text-slate-400">
               Seus dados não ficam salvos neste site: vão só na mensagem que você mesmo envia pelo WhatsApp.
             </p>
           </div>
