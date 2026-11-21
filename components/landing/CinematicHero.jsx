@@ -8,15 +8,15 @@ import { useEffect, useRef, useState } from "react";
 
 // Cada frase em linhas (a última em gradiente) e quanto tempo fica na tela para ser lida.
 const FRASES = [
-  {
-    linhas: ["A escala dos seus", "resultados comerciais", "passa pela Let\u2019s Touch Base."],
-    leitura: 3.0,
-    cena: { velocidade: 22, ordem: 0 },
-  },
-  { linhas: ["Tudo se inicia", "com uma conversa."], leitura: 2.4, cena: { velocidade: 30, ordem: 0.12 } },
+  { linhas: ["Tudo se inicia", "com uma conversa."], leitura: 2.6, cena: { velocidade: 22, ordem: 0 } },
   {
     linhas: ["A inteligência, organização", "e o talento de sua equipe", "levam a seus objetivos."],
-    leitura: 3.2,
+    leitura: 3.6,
+    cena: { velocidade: 28, ordem: 0.2 },
+  },
+  {
+    linhas: ["A escala dos seus", "resultados comerciais", "passa pela Let\u2019s Touch Base."],
+    leitura: 3.3,
     cena: { velocidade: 20, ordem: 0.45 },
   },
 ];
@@ -117,8 +117,8 @@ export default function CinematicHero() {
 
             // Sequência: cada frase entra por máscara e muda o ritmo da cena.
             const intro = gsap.timeline({ defaults: { ease: "power3.out" } });
-            // Ritmo em tempos absolutos: cada frase fica o tempo de ser lida (FRASES[i].leitura) e a
-            // seguinte entra 0,15 s depois de a anterior começar a sair. A primeira já entrou pelo CSS.
+            // Ritmo em tempos absolutos: cada frase fica o tempo de ser lida (FRASES[i].leitura), sai por
+            // inteiro e só então a seguinte entra. A primeira já entrou pelo CSS. Igual no celular e no computador.
             const ENTRADA = 1.0;
             const SAIDA = 0.7;
             let inicio = 0;
@@ -132,7 +132,7 @@ export default function CinematicHero() {
               const saida = (i === 0 ? 1.2 : inicio + ENTRADA) + FRASES[i].leitura;
               intro.to(linhas(frase), { yPercent: -110, duration: SAIDA, stagger: 0.06, ease: "power2.in" }, saida);
               intro.set(frase, { autoAlpha: 0 }, saida + SAIDA + 0.05);
-              inicio = saida + 0.3;
+              inicio = saida + SAIDA + 0.35; // a próxima só entra depois de a anterior sair por inteiro
             });
 
             // Quarta etapa: aceleração de 100% a 500%, explosão e a assinatura saindo do clarão.
