@@ -122,9 +122,9 @@ body {
 @keyframes ltb-sobe { from { transform: translateY(110%); } to { transform: translateY(0); } }
 
 /* Primeira frase entra por CSS (sem depender do JavaScript) */
-.ltb-frase-primeira .ltb-linha > span { animation: ltb-sobe 1s var(--ease-ltb) 0.15s both; }
-.ltb-frase-primeira .ltb-linha + .ltb-linha > span { animation-delay: 0.25s; }
-.ltb-frase-primeira .ltb-linha + .ltb-linha + .ltb-linha > span { animation-delay: 0.35s; }
+.ltb-frase-primeira .ltb-linha > span { animation: ltb-sobe 1.3s var(--ease-ltb) 0.2s both; }
+.ltb-frase-primeira .ltb-linha + .ltb-linha > span { animation-delay: 0.35s; }
+.ltb-frase-primeira .ltb-linha + .ltb-linha + .ltb-linha > span { animation-delay: 0.5s; }
 .ltb-clarao {
   visibility: hidden;
   opacity: 0;

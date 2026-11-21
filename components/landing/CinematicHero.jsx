@@ -10,13 +10,13 @@ import { useEffect, useRef, useState } from "react";
 const FRASES = [
   {
     linhas: ["A escala dos seus", "resultados comerciais", "passa pela Let\u2019s Touch Base."],
-    leitura: 1.9,
+    leitura: 3.0,
     cena: { velocidade: 22, ordem: 0 },
   },
-  { linhas: ["Tudo se inicia", "com uma conversa."], leitura: 1.3, cena: { velocidade: 30, ordem: 0.12 } },
+  { linhas: ["Tudo se inicia", "com uma conversa."], leitura: 2.4, cena: { velocidade: 30, ordem: 0.12 } },
   {
     linhas: ["A inteligência, organização", "e o talento de sua equipe", "levam a seus objetivos."],
-    leitura: 2.1,
+    leitura: 3.2,
     cena: { velocidade: 20, ordem: 0.45 },
   },
 ];
@@ -119,20 +119,20 @@ export default function CinematicHero() {
             const intro = gsap.timeline({ defaults: { ease: "power3.out" } });
             // Ritmo em tempos absolutos: cada frase fica o tempo de ser lida (FRASES[i].leitura) e a
             // seguinte entra 0,15 s depois de a anterior começar a sair. A primeira já entrou pelo CSS.
-            const ENTRADA = 0.6;
-            const SAIDA = 0.45;
+            const ENTRADA = 1.0;
+            const SAIDA = 0.7;
             let inicio = 0;
             let pulou = false;
             frases.forEach((frase, i) => {
               if (i > 0) {
                 intro.set(frase, { autoAlpha: 1 }, inicio);
-                intro.fromTo(linhas(frase), { yPercent: 110 }, { yPercent: 0, duration: ENTRADA, stagger: 0.06 }, inicio);
+                intro.fromTo(linhas(frase), { yPercent: 110 }, { yPercent: 0, duration: ENTRADA, stagger: 0.1 }, inicio);
               }
               intro.call(() => tunel?.setAlvo(FRASES[i].cena), null, inicio);
-              const saida = (i === 0 ? 0.5 : inicio + ENTRADA) + FRASES[i].leitura;
-              intro.to(linhas(frase), { yPercent: -110, duration: SAIDA, stagger: 0.04, ease: "power2.in" }, saida);
+              const saida = (i === 0 ? 1.2 : inicio + ENTRADA) + FRASES[i].leitura;
+              intro.to(linhas(frase), { yPercent: -110, duration: SAIDA, stagger: 0.06, ease: "power2.in" }, saida);
               intro.set(frase, { autoAlpha: 0 }, saida + SAIDA + 0.05);
-              inicio = saida + 0.15;
+              inicio = saida + 0.3;
             });
 
             // Quarta etapa: aceleração de 100% a 500%, explosão e a assinatura saindo do clarão.
