@@ -4,10 +4,10 @@
 // alocação por parceiro e auditoria de risco (MED). Dados de /api/dashboard/metrics.
 
 import { useCallback, useEffect, useState } from "react";
-import { buscarMetricas } from "../../lib/apiLeads.js";
-import { KLUUBPAY, PUSHIN_PAY } from "../../lib/custosParceiros.js";
-import ClientDetailView, { BadgeFornecedor } from "../../components/ClientDetailView.jsx";
-import AprovacoesPendentes from "../../components/AprovacoesPendentes.jsx";
+import { buscarMetricas } from "../../../lib/apiLeads.js";
+import { KLUUBPAY, PUSHIN_PAY } from "../../../lib/custosParceiros.js";
+import ClientDetailView, { BadgeFornecedor } from "../../../components/ClientDetailView.jsx";
+import AprovacoesPendentes from "../../../components/AprovacoesPendentes.jsx";
 
 const PERIODOS = [
   ["mes", "Este mês"],

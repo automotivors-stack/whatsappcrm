@@ -1,11 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { FASES, exigeFornecedor } from "../../lib/kanban.js";
-import { KLUUBPAY, PUSHIN_PAY } from "../../lib/custosParceiros.js";
-import ClientDetailView, { BadgeFornecedor } from "../../components/ClientDetailView.jsx";
-import AprovacoesPendentes from "../../components/AprovacoesPendentes.jsx";
-import { listarLeads, patchLead } from "../../lib/apiLeads.js";
+import { FASES, exigeFornecedor } from "../../../lib/kanban.js";
+import { KLUUBPAY, PUSHIN_PAY } from "../../../lib/custosParceiros.js";
+import ClientDetailView, { BadgeFornecedor } from "../../../components/ClientDetailView.jsx";
+import AprovacoesPendentes from "../../../components/AprovacoesPendentes.jsx";
+import { listarLeads, patchLead } from "../../../lib/apiLeads.js";
 
 const FILTROS = [
   { id: "todos", rotulo: "Todos os Leads", icone: "" },

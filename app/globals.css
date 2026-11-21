@@ -29,3 +29,117 @@ body {
   background: #9aa5b1;
   border-radius: 6px;
 }
+
+/* ---------- Let's Touch Base. · tokens da marca (docs/marca/manual-de-marca.md) ----------
+   Usados pela landing pública. O CRM interno ainda não foi migrado para a identidade nova. */
+@theme {
+  --color-ltb-navy: #0b1f44;
+  --color-ltb-navy-deep: #050d1f;
+  --color-ltb-blue: #2563eb;
+  --color-ltb-blue-soft: #60a5fa;
+  --color-ltb-green: #22c55e;
+  --color-ltb-purple: #7c3aed;
+  --color-ltb-slate: #94a3b8;
+  --color-ltb-cloud: #f8fafc;
+  --font-ltb-texto: "Inter Variable", system-ui, Arial, sans-serif;
+  --font-ltb-titulo: "Manrope Variable", "Inter Variable", system-ui, Arial, sans-serif;
+  --radius-ltb-input: 8px;
+  --radius-ltb-card: 12px;
+  --radius-ltb-painel: 16px;
+  --ease-ltb: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.ltb-site {
+  font-family: var(--font-ltb-texto);
+  background: var(--color-ltb-cloud);
+  color: var(--color-ltb-navy);
+  -webkit-font-smoothing: antialiased;
+}
+.ltb-site :focus-visible {
+  outline: 3px solid var(--color-ltb-blue-soft);
+  outline-offset: 3px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ltb-site *, .ltb-site *::before, .ltb-site *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ---------- landing: hero cinematográfico ---------- */
+.ltb-hero-fundo {
+  /* Fundo sem WebGL: profundidade com a paleta da marca, ponto de fuga ao centro. */
+  background:
+    radial-gradient(ellipse 38% 30% at 50% 50%, rgba(96, 165, 250, 0.35), transparent 70%),
+    radial-gradient(ellipse 80% 60% at 50% 50%, rgba(37, 99, 235, 0.22), transparent 75%),
+    conic-gradient(from 0deg at 50% 50%, rgba(37, 99, 235, 0.18), rgba(34, 197, 94, 0.12), rgba(124, 58, 237, 0.1), rgba(37, 99, 235, 0.18)),
+    #050d1f;
+}
+.ltb-hero-vinheta {
+  /* Escurece as bordas e a área do texto (à esquerda) para garantir contraste sobre as luzes;
+     o centro (ponto de fuga) fica livre para a cena. */
+  background:
+    linear-gradient(90deg, rgba(5, 13, 31, 0.82) 0%, rgba(5, 13, 31, 0.6) 34%, rgba(5, 13, 31, 0.15) 58%, transparent 72%),
+    linear-gradient(to bottom, rgba(5, 13, 31, 0.55), transparent 20%, transparent 74%, rgba(5, 13, 31, 0.85));
+}
+@media (max-width: 767px) {
+  .ltb-hero-vinheta {
+    background:
+      linear-gradient(to bottom, rgba(5, 13, 31, 0.5), rgba(5, 13, 31, 0.62) 30%, rgba(5, 13, 31, 0.62) 78%, rgba(5, 13, 31, 0.9));
+  }
+}
+.ltb-gradiente-texto {
+  background: linear-gradient(90deg, #8fd3ff 0%, #60a5fa 35%, #4ade80 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.ltb-botao-primario,
+.ltb-botao-secundario {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  border-radius: 9999px;
+  padding: 0 1.5rem;
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: background-color 200ms var(--ease-ltb), transform 200ms var(--ease-ltb), border-color 200ms;
+}
+.ltb-botao-primario { background: var(--color-ltb-blue); color: #fff; box-shadow: 0 10px 30px -12px rgba(37, 99, 235, 0.8); }
+.ltb-botao-primario:hover { background: #1d4ed8; transform: translateY(-1px); }
+.ltb-botao-secundario { border: 1px solid rgba(248, 250, 252, 0.35); color: #fff; background: rgba(5, 13, 31, 0.35); backdrop-filter: blur(6px); }
+.ltb-botao-secundario:hover { border-color: rgba(248, 250, 252, 0.7); transform: translateY(-1px); }
+.ltb-indicador-rolagem {
+  width: 18px; height: 28px; border: 1.5px solid rgba(248, 250, 252, 0.6); border-radius: 10px; position: relative;
+}
+.ltb-indicador-rolagem::after {
+  content: ""; position: absolute; left: 50%; top: 6px; width: 3px; height: 6px; margin-left: -1.5px;
+  border-radius: 2px; background: #fff; animation: ltb-rolar 1.8s var(--ease-ltb) infinite;
+}
+@keyframes ltb-rolar { 0% { transform: translateY(0); opacity: 1; } 70% { transform: translateY(8px); opacity: 0; } 100% { opacity: 0; } }
+@keyframes ltb-sobe { from { transform: translateY(110%); } to { transform: translateY(0); } }
+
+/* Primeira frase entra por CSS (sem depender do JavaScript) */
+.ltb-frase-primeira .ltb-linha > span { animation: ltb-sobe 1s var(--ease-ltb) 0.15s both; }
+.ltb-frase-primeira .ltb-linha + .ltb-linha > span { animation-delay: 0.25s; }
+
+/* Estado inicial: só a primeira frase; o resto espera o GSAP (ou a rede de segurança). */
+.ltb-hero[data-estado="inicial"] .ltb-frase:not(.ltb-frase-primeira),
+.ltb-hero[data-estado="inicial"] .ltb-marca,
+.ltb-hero[data-estado="inicial"] .ltb-transicao { visibility: hidden; }
+
+/* Versão estática: movimento reduzido ou falha de script. Tudo legível, nada escondido. */
+.ltb-frases-estaticas { display: none; }
+.ltb-hero[data-estado="estatico"] .ltb-sequencia,
+.ltb-hero[data-estado="estatico"] .ltb-transicao { display: none; }
+.ltb-hero[data-estado="estatico"] .ltb-frases-estaticas {
+  display: block; margin-bottom: 1.5rem; max-width: 40rem;
+  font-family: var(--font-ltb-titulo); font-weight: 800; text-transform: uppercase; letter-spacing: 0.02em;
+  font-size: clamp(0.85rem, 1.6vw, 1rem); line-height: 1.6; color: #93c5fd;
+}
+.ltb-hero[data-estado="animado"] .ltb-frases-estaticas,
+.ltb-hero[data-estado="inicial"] .ltb-frases-estaticas {
+  position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; display: block;
+}

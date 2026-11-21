@@ -1,18 +1,14 @@
 import "./globals.css";
-import NavegacaoPrincipal from "../components/NavegacaoPrincipal.jsx";
 
 export const metadata = {
-  title: "CRM Meios de Pagamento",
-  description: "Pipeline de leads de consultoria em meios de pagamento",
+  title: "Let's Touch Base.",
+  description: "Intelligent Sales Workspace",
 };
 
 export default function RootLayout({ children }) {
   return (
     <html lang="pt-BR">
-      <body className="min-h-screen antialiased">
-        <NavegacaoPrincipal />
-        {children}
-      </body>
+      <body className="min-h-screen antialiased">{children}</body>
     </html>
   );
 }

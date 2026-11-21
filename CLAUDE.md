@@ -50,8 +50,11 @@ Resend (e-mail) · Anthropic (`@anthropic-ai/sdk`, IA do diagnóstico). Gerencia
 - `services/leads.js` + `app/api/leads` (Kanban, dossiê, interações) · `lib/kanban.js` (7 fases)
 - `lib/custosParceiros.js` (tabelas de custo) · `lib/precificacao.js` (spread) · `lib/proposta.js` (texto ao cliente)
 - `services/comunicacao.js` + `app/api/whatsapp/send`, `app/api/email/send` (disparos)
-- `services/dashboard.js` + `app/api/dashboard/metrics` · `app/kanban`, `app/dashboard`, `components/`
-- `proxy.js` — usuário e senha (HTTP Basic) em tudo, menos o webhook
+- `services/dashboard.js` + `app/api/dashboard/metrics` · `app/(crm)/kanban`, `app/(crm)/dashboard`, `components/`
+- `proxy.js` — usuário e senha (HTTP Basic) em tudo, menos a lista `ROTAS_PUBLICAS` (`GET`/`HEAD /` e `POST` do webhook);
+  `tests/acessoPublico.test.js` mapeia todas as rotas e falha se algo novo abrir sem autenticação
+- Landing pública: `app/(site)/page.jsx` + `components/landing/` (hero WebGL em `tunel.js`, GSAP/ScrollTrigger,
+  modo estático para `prefers-reduced-motion` e sem JS). Não lê banco nem dados do CRM. Plano: `docs/landing.md`
 
 ## Regras de negócio (nunca quebrar; cada uma tem teste)
 
