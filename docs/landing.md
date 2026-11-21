@@ -15,6 +15,14 @@
 - A demo do prompt (página `/obras` com capas do Unsplash) não foi criada: seria uma rota nova atrás da senha e com
   imagens que não são da marca.
 
+## Bloco de depoimentos (parede 3D)
+- `components/landing/DepoimentosParede.jsx` usa `components/ui/3d-testimonials.jsx` (3D Testimonials, ProfitizeBuild,
+  convertido para .jsx só sem os tipos; não reformatar). Dados em `content/depoimentos.js`.
+- **Só depoimentos reais, com autorização por escrito** (nome, cargo, empresa, foto, texto e qualquer número citado).
+  Nada inventado: depoimento falso é publicidade enganosa (CDC art. 37; Código do CONAR).
+- Enquanto houver item `exemplo: true`, o bloco mostra o aviso de prévia. A demo do prompt (`/3d-testimonials`, com
+  nomes fictícios e fotos do Unsplash) não foi criada.
+
 ## Segurança
 - Rota pública só `GET`/`HEAD /` (`ROTAS_PUBLICAS` em `proxy.js`); o restante do CRM segue com HTTP Basic.
 - A landing não importa serviços, banco nem variáveis de ambiente do servidor.

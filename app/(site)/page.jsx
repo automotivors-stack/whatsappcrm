@@ -5,6 +5,7 @@ import LandingHeader from "../../components/landing/LandingHeader.jsx";
 import CinematicHero from "../../components/landing/CinematicHero.jsx";
 import ProblemaNarrativa from "../../components/landing/ProblemaNarrativa.jsx";
 import PilaresRoda from "../../components/landing/PilaresRoda.jsx";
+import DepoimentosParede from "../../components/landing/DepoimentosParede.jsx";
 import ProximasEtapas from "../../components/landing/ProximasEtapas.jsx";
 
 export const metadata = {
@@ -27,6 +28,7 @@ export default function Inicio() {
         <CinematicHero />
         <ProblemaNarrativa />
         <PilaresRoda />
+        <DepoimentosParede />
         <ProximasEtapas />
       </main>
     </>
