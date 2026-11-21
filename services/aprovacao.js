@@ -1,0 +1,220 @@
+// Aprovação humana pré-CRM: nenhum card entra em `oportunidades` sem o SIM do consultor
+// no WhatsApp administrativo (ADMIN_WHATSAPP_NUMBER).
+
+import { chatIdDoTelefone, mascarar } from "../lib/telefone.js";
+
+/** Campos do diagnóstico aceitos; são as colunas de `oportunidades` preenchidas pela conversa. */
+export const CAMPOS_DIAGNOSTICO = [
+  "tipo_pessoa", "nome_ou_razao_social", "documento", "descricao_negocio", "onde_opera_hoje",
+  "volume_mensal", "numero_transacoes", "taxas_atuais", "taxa_med_operacao", "limite_por_venda",
+  "limite_saque_diario", "saque_terceiros", "metodos_pagamento", "tipo_integracao",
+  "whatsapp_contato", "email_contato", "resumo_executivo",
+];
+
+const TAMANHO_MAXIMO_CAMPO = 2000;
+const NAO_INFORMADO = "não informado";
+
+export const TEXTO_LEAD_INSERIDO = "✅ Lead inserido com sucesso na fase 'Contato Recebido' do CRM!";
+
+/** Mantém só os campos conhecidos, com tipos coerentes com a tabela. */
+export function limparDiagnostico(diagnostico, telefone) {
+  const entrada = diagnostico && typeof diagnostico === "object" ? diagnostico : {};
+  const dados = {};
+  for (const campo of CAMPOS_DIAGNOSTICO) {
+    const valor = entrada[campo];
+    if (valor === undefined || valor === null || valor === "") continue;
+    if (campo === "numero_transacoes") {
+      const n = Number.parseInt(valor, 10);
+      if (Number.isFinite(n)) dados[campo] = n;
+    } else if (campo === "saque_terceiros") {
+      const v = String(valor).trim().toLowerCase();
+      if (valor === true || ["sim", "true", "1"].includes(v)) dados[campo] = 1;
+      else if (valor === false || ["nao", "não", "false", "0"].includes(v)) dados[campo] = 0;
+    } else {
+      dados[campo] = String(valor).trim().slice(0, TAMANHO_MAXIMO_CAMPO);
+    }
+  }
+  if (!dados.whatsapp_contato && telefone) dados.whatsapp_contato = telefone;
+  return dados;
+}
+
+export function formatarAvisoAdmin(dados, id) {
+  const v = (campo) => dados[campo] ?? NAO_INFORMADO;
+  const volume = dados.volume_mensal ? `${dados.volume_mensal}/mês` : NAO_INFORMADO;
+  return [
+    "🔔 *Novo diagnóstico de meios de pagamento finalizado!*",
+    `• Cliente: ${v("nome_ou_razao_social")}`,
+    `• Documento: ${v("documento")}`,
+    `• Volume Declarado: ${volume}`,
+    `• Taxa MED: ${v("taxa_med_operacao")}`,
+    `• Limite Venda: ${v("limite_por_venda")}`,
+    `• Resumo: ${v("resumo_executivo")}`,
+    "",
+    "Deseja implementar este lead no CRM? Responda *SIM* para cadastrar no Kanban ou *NÃO* para descartar.",
+    `_Código #${id}. Se houver mais de um pendente, responda SIM ${id} ou NÃO ${id}._`,
+  ].join("\n");
+}
+
+/**
+ * Chamado quando a IA encerra o atendimento e gera o resumo executivo:
+ *  a) pausa o bot no chat do cliente (status_relacionamento = 'pausado_humano');
+ *  b) grava a pendência em `aprovacoes_pendentes` (uma aberta por contato; a nova substitui os dados);
+ *  c) avisa o consultor no ADMIN_WHATSAPP_NUMBER.
+ * Se o aviso falhar, a pendência fica com aviso_enviado = 0 e o erro sobe para o log.
+ */
+export async function finalizarDiagnostico(ctx, telefone, diagnostico) {
+  const { db, enviar, adminNumero } = ctx;
+  if (!adminNumero) throw new Error("ADMIN_WHATSAPP_NUMBER não configurado.");
+
+  const dados = limparDiagnostico(diagnostico, telefone);
+  const [, pendencia] = await db.batch(
+    [
+      {
+        sql: `UPDATE contatos SET status_relacionamento = 'pausado_humano', updated_at = CURRENT_TIMESTAMP
+              WHERE phone_number = ?`,
+        args: [telefone],
+      },
+      {
+        sql: `INSERT INTO aprovacoes_pendentes (phone_number, dados) VALUES (?, ?)
+              ON CONFLICT (phone_number) WHERE status = 'aguardando'
+              DO UPDATE SET dados = excluded.dados, aviso_enviado = 0, created_at = CURRENT_TIMESTAMP
+              RETURNING id`,
+        args: [telefone, JSON.stringify(dados)],
+      },
+    ],
+    "write",
+  );
+  const id = Number(pendencia.rows[0].id);
+
+  await enviar(chatIdDoTelefone(adminNumero), formatarAvisoAdmin(dados, id));
+  await db.execute({ sql: "UPDATE aprovacoes_pendentes SET aviso_enviado = 1 WHERE id = ?", args: [id] });
+  console.info(`[aprovacao] pendência #${id} criada para ${mascarar(telefone)}`);
+  return { id };
+}
+
+/** Normaliza "Sim", "*não*", "NAO 12", "nao #12" → { decisao: "SIM"|"NAO", id?: number } ou null. */
+export function interpretarDecisao(texto) {
+  const limpo = String(texto ?? "")
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toUpperCase()
+    .replace(/[*_~.!]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  const m = /^(SIM|NAO)(?: ?#? ?(\d+))?$/.exec(limpo);
+  if (!m) return null;
+  return { decisao: m[1], id: m[2] ? Number(m[2]) : undefined };
+}
+
+async function pendenciasAbertas(db) {
+  const { rows } = await db.execute(
+    "SELECT id, dados FROM aprovacoes_pendentes WHERE status = 'aguardando' ORDER BY id",
+  );
+  return rows.map((r) => ({ id: Number(r.id), dados: JSON.parse(r.dados) }));
+}
+
+const nomeDe = (dados) => dados.nome_ou_razao_social ?? "cliente sem nome";
+
+/**
+ * Trata uma mensagem vinda do ADMIN_WHATSAPP_NUMBER.
+ * SIM → cria a oportunidade em 'Contato Recebido'. NÃO → descarta a pendência. Nada é apagado.
+ */
+export async function tratarRespostaAdmin(ctx, texto) {
+  const { db, enviar, adminNumero } = ctx;
+  const chatAdmin = chatIdDoTelefone(adminNumero);
+  const responder = (msg) => enviar(chatAdmin, msg);
+  const decisao = interpretarDecisao(texto);
+
+  if (!decisao) {
+    const abertas = await pendenciasAbertas(db);
+    if (abertas.length) {
+      await responder(`Há ${abertas.length} diagnóstico(s) aguardando decisão. Responda *SIM* ou *NÃO* (com o código, se houver mais de um).`);
+    }
+    return { acao: "admin_texto_livre" };
+  }
+
+  let alvo;
+  if (decisao.id !== undefined) {
+    const { rows } = await db.execute({
+      sql: "SELECT id, dados, status FROM aprovacoes_pendentes WHERE id = ?",
+      args: [decisao.id],
+    });
+    if (!rows.length) {
+      await responder(`Não encontrei o diagnóstico #${decisao.id}.`);
+      return { acao: "admin_codigo_inexistente" };
+    }
+    if (rows[0].status !== "aguardando") {
+      await responder(`O diagnóstico #${decisao.id} já foi ${rows[0].status}.`);
+      return { acao: "admin_ja_decidido" };
+    }
+    alvo = { id: Number(rows[0].id), dados: JSON.parse(rows[0].dados) };
+  } else {
+    const abertas = await pendenciasAbertas(db);
+    if (abertas.length === 0) {
+      await responder("Não há diagnóstico aguardando decisão.");
+      return { acao: "admin_sem_pendencia" };
+    }
+    if (abertas.length > 1) {
+      const lista = abertas.slice(0, 10).map((p) => `• #${p.id} ${nomeDe(p.dados)}`).join("\n");
+      await responder(`Há ${abertas.length} diagnósticos aguardando. Responda com o código, por exemplo *SIM ${abertas[0].id}*:\n${lista}`);
+      return { acao: "admin_ambiguo" };
+    }
+    alvo = abertas[0];
+  }
+
+  if (decisao.decisao === "NAO") {
+    const r = await db.execute({
+      sql: `UPDATE aprovacoes_pendentes SET status = 'descartado', decidido_em = CURRENT_TIMESTAMP
+            WHERE id = ? AND status = 'aguardando'`,
+      args: [alvo.id],
+    });
+    if (r.rowsAffected === 0) {
+      await responder(`O diagnóstico #${alvo.id} já tinha sido decidido.`);
+      return { acao: "admin_ja_decidido" };
+    }
+    await responder(`🗑️ Diagnóstico #${alvo.id} (${nomeDe(alvo.dados)}) descartado. Nada foi cadastrado no CRM.`);
+    return { acao: "descartado", pendenciaId: alvo.id };
+  }
+
+  // SIM: tudo numa transação, protegida contra duas aprovações simultâneas da mesma pendência.
+  const tx = await db.transaction("write");
+  let oportunidadeId;
+  try {
+    const marcada = await tx.execute({
+      sql: `UPDATE aprovacoes_pendentes SET status = 'aprovado', decidido_em = CURRENT_TIMESTAMP
+            WHERE id = ? AND status = 'aguardando'`,
+      args: [alvo.id],
+    });
+    if (marcada.rowsAffected === 0) {
+      await tx.rollback();
+      await responder(`O diagnóstico #${alvo.id} já tinha sido decidido.`);
+      return { acao: "admin_ja_decidido" };
+    }
+    const { rows } = await tx.execute({
+      sql: "SELECT phone_number, dados FROM aprovacoes_pendentes WHERE id = ?",
+      args: [alvo.id],
+    });
+    const telefone = rows[0].phone_number;
+    const dados = JSON.parse(rows[0].dados);
+    const colunas = CAMPOS_DIAGNOSTICO.filter((c) => dados[c] !== undefined);
+    const inserida = await tx.execute({
+      sql: `INSERT INTO oportunidades (phone_number, ${colunas.join(", ")}, status_kanban)
+            VALUES (?, ${colunas.map(() => "?").join(", ")}, 'Contato Recebido') RETURNING id`,
+      args: [telefone, ...colunas.map((c) => dados[c])],
+    });
+    oportunidadeId = Number(inserida.rows[0].id);
+    await tx.execute({
+      sql: "UPDATE aprovacoes_pendentes SET oportunidade_id = ? WHERE id = ?",
+      args: [oportunidadeId, alvo.id],
+    });
+    await tx.commit();
+  } catch (erro) {
+    if (!tx.closed) await tx.rollback();
+    throw erro;
+  } finally {
+    tx.close();
+  }
+
+  await responder(`${TEXTO_LEAD_INSERIDO}\n#${alvo.id} ${nomeDe(alvo.dados)}`);
+  return { acao: "aprovado", pendenciaId: alvo.id, oportunidadeId };
+}
