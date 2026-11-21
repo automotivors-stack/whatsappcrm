@@ -1,7 +1,22 @@
-// Acesso do consultor: o Kanban e a API de leads expõem CPF/CNPJ e dados comerciais,
-// então ficam atrás de usuário e senha (HTTP Basic) definidos no ambiente.
-// O webhook do OpenWA NÃO passa por aqui: ele tem a própria assinatura HMAC.
-// Sem CRM_USUARIO/CRM_SENHA configurados, o acesso fica bloqueado (falha fechada).
+// Política de acesso: TUDO exige usuário e senha do consultor (HTTP Basic), exceto a lista
+// explícita ROTAS_PUBLICAS abaixo. Rota nova nasce protegida. O Kanban, o dashboard e as APIs expõem
+// CPF/CNPJ e dados comerciais. Sem CRM_USUARIO/CRM_SENHA configurados, o CRM fica bloqueado
+// (falha fechada); as rotas públicas continuam abrindo.
+// tests/acessoPublico.test.js percorre todas as rotas do app e falha se alguma fora da lista abrir sem senha.
+
+/**
+ * Únicas exceções, por caminho EXATO e método:
+ *  - "/" (GET/HEAD): landing institucional; não lê banco nem dados do CRM.
+ *  - "/api/webhooks/whatsapp" (POST): eventos do OpenWA, protegidos pela assinatura HMAC (webhookOpenwa.js).
+ */
+export const ROTAS_PUBLICAS = [
+  { caminho: "/", metodos: ["GET", "HEAD"] },
+  { caminho: "/api/webhooks/whatsapp", metodos: ["POST"] },
+];
+
+export function rotaPublica(metodo, caminho) {
+  return ROTAS_PUBLICAS.some((r) => r.caminho === caminho && r.metodos.includes(metodo));
+}
 
 function iguais(a, b) {
   // Comparação em tempo constante para o tamanho dado.
@@ -20,6 +35,8 @@ function recusar(request, status, mensagem, cabecalhos = {}) {
 }
 
 export function proxy(request) {
+  if (rotaPublica(request.method, new URL(request.url).pathname)) return undefined;
+
   const usuario = process.env.CRM_USUARIO;
   const senha = process.env.CRM_SENHA;
   if (!usuario || !senha) {
@@ -47,6 +64,7 @@ export function proxy(request) {
 }
 
 export const config = {
-  // Tudo, menos o webhook do WhatsApp e os arquivos estáticos do Next.
-  matcher: ["/((?!api/webhooks|_next/static|_next/image|favicon.ico).*)"],
+  // Passa por aqui TODA requisição, menos os arquivos estáticos gerados no build do Next
+  // (JS, CSS, fontes) e o favicon. As exceções públicas ficam em ROTAS_PUBLICAS, não no matcher.
+  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
 };
