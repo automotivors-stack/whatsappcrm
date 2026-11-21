@@ -31,7 +31,6 @@ export default function CinematicHero() {
   const canvas = useRef(null);
   const sequencia = useRef(null);
   const marca = useRef(null);
-  const transicao = useRef(null);
   const aviso = useRef(null);
   const clarao = useRef(null);
   const sensor = useRef(null); // ouvinte do giroscópio (opcional, só quando o visitante ativa)
@@ -113,7 +112,6 @@ export default function CinematicHero() {
             const linhas = (el) => el.querySelectorAll(".ltb-linha > span");
             gsap.set(frases.slice(1), { autoAlpha: 0 });
             gsap.set(marca.current, { autoAlpha: 0, y: 24 });
-            gsap.set(transicao.current, { autoAlpha: 0, y: 40 });
 
             // Sequência: cada frase entra por máscara e muda o ritmo da cena.
             const intro = gsap.timeline({ defaults: { ease: "power3.out" } });
@@ -164,32 +162,21 @@ export default function CinematicHero() {
               tunel?.setAlvo(CENA_CRUZEIRO);
             };
 
-            // Transição: o hero fica fixo enquanto a rolagem desacelera e organiza a cena.
-            const mm = gsap.matchMedia();
-            mm.add({ largo: "(min-width: 768px)", estreito: "(max-width: 767px)" }, (c) => {
-              const percurso = c.conditions.largo ? "+=140%" : "+=110%";
-              const tl = gsap.timeline({
-                scrollTrigger: {
-                  trigger: secao.current,
-                  start: "top top",
-                  end: percurso,
-                  pin: true,
-                  scrub: 0.7,
-                  // O topo da página já é o início da transição: só pula a introdução quando o
-                  // visitante de fato rola (progresso > 2%), nunca ao carregar.
-                  onUpdate: (st) => {
-                    tunel?.setProgresso(st.progress);
-                    if (st.progress > 0.02) pular();
-                  },
+            // Rolagem: sem pin. A assinatura é a última mensagem do hero e sobe junto com ele; o túnel
+            // desacelera e se organiza enquanto o hero sai da tela. Igual no celular e no computador.
+            gsap.timeline({
+              scrollTrigger: {
+                trigger: secao.current,
+                start: "top top",
+                end: "bottom top",
+                scrub: 0.7,
+                // Só pula a introdução quando o visitante de fato rola (progresso > 2%), nunca ao carregar.
+                onUpdate: (st) => {
+                  tunel?.setProgresso(st.progress);
+                  if (st.progress > 0.02) pular();
                 },
-              });
-              tl.to(marca.current, { autoAlpha: 0, y: -48, ease: "power2.in", duration: 0.3 }, 0.02)
-                .to(aviso.current, { autoAlpha: 0, duration: 0.1 }, 0)
-                // A frase da transição fica na tela até o fim do pin e sai com o hero: a seção 2 entra
-                // logo abaixo, sem tela vazia entre as duas.
-                .to(transicao.current, { autoAlpha: 1, y: 0, ease: "power3.out", duration: 0.3 }, 0.3)
-                .to({}, { duration: 0.4 }, 0.6);
-            });
+              },
+            }).to(aviso.current, { autoAlpha: 0, duration: 0.15 }, 0).to({}, { duration: 0.85 }, 0.15);
           }, secao);
         })
         .catch(() => setEstado("estatico"));
@@ -281,16 +268,6 @@ export default function CinematicHero() {
             <a href="#plataforma" className="ltb-botao-primario">Conhecer a plataforma</a>
             <a href="#demonstracao" className="ltb-botao-secundario">Agendar uma demonstração</a>
           </div>
-        </div>
-
-        {/* Mensagem da transição (aparece com a rolagem) */}
-        <div ref={transicao} className="ltb-transicao pointer-events-none absolute inset-x-5 top-1/2 -translate-y-1/2 text-center sm:inset-x-10">
-          <h2 className="mx-auto max-w-4xl font-ltb-titulo text-[clamp(2.2rem,6vw,5rem)] font-extrabold leading-[1] tracking-[-0.035em]">
-            O futuro das vendas começa com uma conversa.
-          </h2>
-          <p className="mx-auto mt-5 max-w-2xl text-base text-slate-200 sm:text-xl">
-            Inteligência artificial, relacionamento e estratégia comercial em um só lugar.
-          </p>
         </div>
       </div>
 

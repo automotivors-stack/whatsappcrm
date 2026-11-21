@@ -25,7 +25,7 @@ export default function LandingHeader() {
         Pular para o conteúdo
       </a>
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 px-5 sm:px-10">
-        <a href="#inicio" className="font-ltb-titulo text-lg font-extrabold tracking-[-0.02em] text-white" aria-label="Let's Touch Base, início">
+        <a href="#inicio" className="shrink-0 whitespace-nowrap font-ltb-titulo text-base font-extrabold tracking-[-0.02em] text-white sm:text-lg" aria-label="Let's Touch Base, início">
           Let&rsquo;s Touch Base<span className="text-ltb-green">.</span>
         </a>
         <nav aria-label="Acessos" className="flex items-center gap-2 sm:gap-4">
@@ -33,8 +33,10 @@ export default function LandingHeader() {
           <a href="/dashboard" className="hidden rounded-full px-3 py-2 text-sm font-medium text-slate-200 hover:text-white sm:inline-flex">
             Entrar
           </a>
-          <a href="#demonstracao" className="inline-flex min-h-10 items-center rounded-full bg-ltb-blue px-4 text-sm font-semibold text-white hover:bg-blue-700">
-            Agendar demonstração
+          <a href="#demonstracao" className="inline-flex min-h-10 items-center whitespace-nowrap rounded-full bg-ltb-blue px-4 text-sm font-semibold text-white hover:bg-blue-700">
+            {/* Em telas estreitas, texto curto para caber numa linha ao lado da marca. */}
+            <span className="sm:hidden">Demonstração</span>
+            <span className="hidden sm:inline">Agendar demonstração</span>
           </a>
         </nav>
       </div>

@@ -133,13 +133,11 @@ body {
 
 /* Estado inicial: só a primeira frase; o resto espera o GSAP (ou a rede de segurança). */
 .ltb-hero[data-estado="inicial"] .ltb-frase:not(.ltb-frase-primeira),
-.ltb-hero[data-estado="inicial"] .ltb-marca,
-.ltb-hero[data-estado="inicial"] .ltb-transicao { visibility: hidden; }
+.ltb-hero[data-estado="inicial"] .ltb-marca { visibility: hidden; }
 
 /* Versão estática: movimento reduzido ou falha de script. Tudo legível, nada escondido. */
 .ltb-frases-estaticas { display: none; }
-.ltb-hero[data-estado="estatico"] .ltb-sequencia,
-.ltb-hero[data-estado="estatico"] .ltb-transicao { display: none; }
+.ltb-hero[data-estado="estatico"] .ltb-sequencia { display: none; }
 .ltb-hero[data-estado="estatico"] .ltb-frases-estaticas {
   display: block; margin-bottom: 1.5rem; max-width: 40rem;
   font-family: var(--font-ltb-titulo); font-weight: 800; text-transform: uppercase; letter-spacing: 0.02em;
