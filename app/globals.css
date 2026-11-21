@@ -167,3 +167,9 @@ body {
   --scb-bubble-ink: #0b1f44;
   font-family: var(--font-ltb-texto);
 }
+
+/* Roda dos pilares no celular: o cartão ficou maior, e o nome do pilar ao lado dele (o .ww-title) passaria por cima
+   do cartão. Ele sai em tela estreita: o próprio cartão e a lista no alto já dizem qual pilar está na frente. */
+@media (max-width: 639px) {
+  .ww-root.ltb-pilares .ww-title { display: none; }
+}

@@ -98,6 +98,9 @@ export function WorksWheel({
   // setas, clique num cartão) chama onRequest(peça) para a página rolar até lá. Sem progress, tudo como no original.
   progress,
   onRequest,
+  // Acréscimo da Let's Touch Base.: o limite da largura do cartão em relação à roda (o original fixa CARD_MAX_W, 0,34).
+  // Numa tela estreita, quem manda é esse limite; subir o número deixa o cartão maior no celular sem mudar o desktop.
+  cardMaxWidth = CARD_MAX_W,
   className,
   ...props
 }) {
@@ -150,7 +153,7 @@ export function WorksWheel({
 
   const metrics = React.useMemo(() => {
     const { w, h } = stage
-    const cardW = Math.min(h * CARD_H * CARD_RATIO, w * CARD_MAX_W)
+    const cardW = Math.min(h * CARD_H * CARD_RATIO, w * cardMaxWidth)
     const cardH = cardW / CARD_RATIO
     const ringR = cardH * RING_R
     // os cartões do anel encolhem até o círculo parecer um laço fechado, e não contas num fio, com qualquer número
@@ -167,7 +170,7 @@ export function WorksWheel({
       title: Math.max(cardH * TITLE, MIN_TITLE),
       index: Math.max(cardH * INDEX, MIN_INDEX),
     }
-  }, [stage, count])
+  }, [stage, count, cardMaxWidth])
 
   // Uma passada por quadro: aproxima turn do alvo e escreve todos os transforms. Quando turn chega ao alvo, o laço
   // dorme até o próximo to().

@@ -65,13 +65,14 @@ const ITENS = PILARES.map((p, i) => ({
 }));
 
 // Quanto de rolagem (em alturas de tela) cada passo da roda ocupa: anel → Talento → … → Inteligência.
-const ROLAGEM_POR_PASSO = 0.7;
+const ROLAGEM_POR_PASSO = 0.45;
 
 /** Segura a roda em cada peça e só gira no meio do trecho: a peça fica parada para leitura antes de a próxima vir. */
 function comPausas(bruto) {
   const base = Math.floor(bruto);
   const f = bruto - base;
-  const s = Math.min(1, Math.max(0, (f - 0.25) / 0.5));
+  // pausa curta: 15% do trecho parada em cada ponta, 70% girando
+  const s = Math.min(1, Math.max(0, (f - 0.15) / 0.7));
   return base + s * s * (3 - 2 * s);
 }
 
@@ -132,7 +133,9 @@ export default function PilaresRoda() {
           action=""
           progress={progresso}
           onRequest={irPara}
-          className="h-full"
+          // no celular o cartão chega a metade da largura (antes, 34%); no desktop quem limita é a altura
+          cardMaxWidth={0.5}
+          className="ltb-pilares h-full"
           style={{
             "--ww-bg": "#050d1f",
             "--ww-fg": "#f8fafc",
