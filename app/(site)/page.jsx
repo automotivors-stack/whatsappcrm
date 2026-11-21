@@ -7,6 +7,7 @@ import ProblemaNarrativa from "../../components/landing/ProblemaNarrativa.jsx";
 import PilaresRoda from "../../components/landing/PilaresRoda.jsx";
 import OperacaoParede from "../../components/landing/OperacaoParede.jsx";
 import ProximasEtapas from "../../components/landing/ProximasEtapas.jsx";
+import WhatsAppFlutuante from "../../components/landing/WhatsAppFlutuante.jsx";
 
 export const metadata = {
   title: "Let's Touch Base. · Intelligent Sales Workspace",
@@ -31,6 +32,7 @@ export default function Inicio() {
         <OperacaoParede />
         <ProximasEtapas />
       </main>
+      <WhatsAppFlutuante />
     </>
   );
 }

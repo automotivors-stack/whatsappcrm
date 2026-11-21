@@ -44,6 +44,12 @@
 - Animações muito atrasadas (mais de 7 s depois de a página reagir) ou sem JavaScript: versão parada, com as frases em
   texto, a assinatura e os botões, sem nada sobreposto. Chegar atrasado não recomeça a sequência.
 
+## Botão flutuante de WhatsApp
+- `components/landing/WhatsAppFlutuante.jsx`: "Fale com um especialista", abre `WHATSAPP_URL` (`content/contato.js`) em nova
+  aba, com a mensagem "Quero um diagnóstico do meu departamento comercial" já escrita.
+- Aparece depois do hero e some ao voltar ao topo. No celular, sai de lado enquanto um botão de agendar está na tela
+  (ficariam um por cima do outro). Pílula navy; o verde fica só no ícone (o manual não usa verde como ação primária).
+
 ## Segurança
 - Rota pública só `GET`/`HEAD /` (`ROTAS_PUBLICAS` em `proxy.js`); o restante do CRM segue com HTTP Basic.
 - A landing não importa serviços, banco nem variáveis de ambiente do servidor.
