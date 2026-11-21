@@ -31,7 +31,9 @@ export function limparDiagnostico(diagnostico, telefone) {
       if (valor === true || ["sim", "true", "1"].includes(v)) dados[campo] = 1;
       else if (valor === false || ["nao", "não", "false", "0"].includes(v)) dados[campo] = 0;
     } else {
-      dados[campo] = String(valor).trim().slice(0, TAMANHO_MAXIMO_CAMPO);
+      // Uma linha só: quebras de linha vindas da conversa não podem forjar linhas
+      // ("• Documento: ...") no aviso que o consultor usa para decidir.
+      dados[campo] = String(valor).replace(/\s+/g, " ").trim().slice(0, TAMANHO_MAXIMO_CAMPO);
     }
   }
   if (!dados.whatsapp_contato && telefone) dados.whatsapp_contato = telefone;

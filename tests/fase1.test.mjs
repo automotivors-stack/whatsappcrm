@@ -267,3 +267,28 @@ test("enviarMensagemWhatsApp monta a chamada do OpenWA", async () => {
   await assert.rejects(enviarMensagemWhatsApp(`${CLIENTE}@c.us`, "oi", { fetchImpl: recusa }), /HTTP 400/);
   await assert.rejects(enviarMensagemWhatsApp(CLIENTE, "oi", { fetchImpl }), /chatId inválido/);
 });
+
+// ---- correções da auditoria ----
+test("auditoria: sem ADMIN_WHATSAPP_NUMBER o evento NÃO é consumido (pode ser reprocessado)", async () => {
+  ctx.adminNumero = undefined;
+  await assert.rejects(processarEventoOpenWA(ctx, evento(CLIENTE, "oi")), /ADMIN_WHATSAPP_NUMBER/);
+  assert.equal(await contar("eventos_processados"), 0);
+});
+
+test("auditoria: falha ao salvar a mensagem desfaz o registro de deduplicação", async () => {
+  await db.execute("DROP TABLE mensagens_historico");
+  const ev = evento(CLIENTE, "oi");
+  await assert.rejects(processarEventoOpenWA(ctx, ev));
+  assert.equal(await contar("eventos_processados"), 0);
+  assert.equal(await contar("contatos"), 0);
+});
+
+test("auditoria: quebra de linha no diagnóstico não forja linhas no aviso ao consultor", async () => {
+  ctx.agente = async () => ({
+    diagnosticoFinal: { ...DIAGNOSTICO, nome_ou_razao_social: "Loja X\n• Documento: 00.000.000/0001-00" },
+  });
+  await processarEventoOpenWA(ctx, evento(CLIENTE, "fim"));
+  const linhas = enviados.at(-1).texto.split("\n");
+  assert.equal(linhas.filter((l) => l.startsWith("• Documento:")).length, 1);
+  assert.equal(linhas[1], "• Cliente: Loja X • Documento: 00.000.000/0001-00");
+});

@@ -36,8 +36,9 @@ export async function processarEventoOpenWA(ctx, payload) {
     return { acao: "ignorado_nao_individual" };
   }
 
-  // Deduplicação idempotente: o mesmo messageId só é processado uma vez.
-  if (!(await registrarEventoSeNovo(msg.id, "openwa", db))) return { acao: "duplicado" };
+  // Configuração conferida ANTES de marcar o evento como processado: com ela faltando,
+  // a mensagem não pode ser consumida e perdida.
+  if (!ctx.adminNumero) throw new Error("ADMIN_WHATSAPP_NUMBER não configurado.");
 
   const telefone = telefoneDoRemetente(msg);
   if (!telefone) {
@@ -45,30 +46,51 @@ export async function processarEventoOpenWA(ctx, payload) {
     return { acao: "ignorado_sem_telefone" };
   }
 
-  if (!ctx.adminNumero) throw new Error("ADMIN_WHATSAPP_NUMBER não configurado.");
   if (mesmoTelefone(telefone, ctx.adminNumero)) {
+    // Deduplicação idempotente: o mesmo messageId só é processado uma vez.
+    if (!(await registrarEventoSeNovo(msg.id, "openwa", db))) return { acao: "duplicado" };
     return tratarRespostaAdmin(ctx, msg.body);
   }
 
+  // Deduplicação + contato + histórico numa transação só: ou o evento fica registrado junto com
+  // a mensagem salva, ou nada fica (antes, uma falha no meio marcava o evento e perdia a mensagem).
   const nome = msg.contact?.pushName || msg.contact?.name || null;
-  await db.execute({
-    sql: `INSERT INTO contatos (phone_number, nome) VALUES (?, ?)
-          ON CONFLICT (phone_number) DO UPDATE
-          SET nome = COALESCE(contatos.nome, excluded.nome), updated_at = CURRENT_TIMESTAMP`,
-    args: [telefone, nome],
-  });
-
   const conteudo = msg.body ? String(msg.body) : `[${msg.type ?? "mensagem"}]`;
-  await db.execute({
-    sql: "INSERT INTO mensagens_historico (phone_number, role, content) VALUES (?, 'user', ?)",
-    args: [telefone, conteudo],
-  });
+  let status;
+  const tx = await db.transaction("write");
+  try {
+    const novo = await tx.execute({
+      sql: "INSERT OR IGNORE INTO eventos_processados (message_id, provider) VALUES (?, 'openwa')",
+      args: [msg.id],
+    });
+    if (novo.rowsAffected === 0) {
+      await tx.rollback();
+      return { acao: "duplicado" };
+    }
+    await tx.execute({
+      sql: `INSERT INTO contatos (phone_number, nome) VALUES (?, ?)
+            ON CONFLICT (phone_number) DO UPDATE
+            SET nome = COALESCE(contatos.nome, excluded.nome), updated_at = CURRENT_TIMESTAMP`,
+      args: [telefone, nome],
+    });
+    await tx.execute({
+      sql: "INSERT INTO mensagens_historico (phone_number, role, content) VALUES (?, 'user', ?)",
+      args: [telefone, conteudo],
+    });
+    const { rows } = await tx.execute({
+      sql: "SELECT status_relacionamento FROM contatos WHERE phone_number = ?",
+      args: [telefone],
+    });
+    status = rows[0]?.status_relacionamento;
+    await tx.commit();
+  } catch (erro) {
+    if (!tx.closed) await tx.rollback();
+    throw erro;
+  } finally {
+    tx.close();
+  }
 
-  const { rows } = await db.execute({
-    sql: "SELECT status_relacionamento FROM contatos WHERE phone_number = ?",
-    args: [telefone],
-  });
-  if (rows[0]?.status_relacionamento === STATUS_PAUSADO) {
+  if (status === STATUS_PAUSADO) {
     // Transbordo humano: a IA não responde; a mensagem fica só no histórico.
     return { acao: "salvo_pausado" };
   }
