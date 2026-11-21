@@ -17,13 +17,15 @@ export default function DepoimentosParede() {
         </h2>
         {temExemplo && (
           <p className="mt-5 inline-flex max-w-2xl rounded-[12px] border border-amber-300/40 bg-amber-300/10 px-4 py-2 text-sm text-amber-100">
-            Prévia: os cartões abaixo são exemplos. Os depoimentos reais entram aqui depois de autorizados por escrito pelos
-            gestores.
+            Demonstração: depoimentos fictícios, de pessoas e empresas que não existem. Os depoimentos reais entram aqui
+            depois de autorizados por escrito pelos gestores.
           </p>
         )}
         <Testimonials3D
           testimonials={itens}
-          repeat={4}
+          repeat={2}
+          // 30 cartões por coluna: a volta é longa, então mais segundos para manter o passo lento e legível
+          duration={190}
           label="Depoimentos de gestores comerciais"
           className="mx-auto mt-12 h-[560px] max-w-[880px] max-sm:h-[480px]"
           style={{
