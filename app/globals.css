@@ -89,11 +89,18 @@ body {
       linear-gradient(to bottom, rgba(5, 13, 31, 0.5), rgba(5, 13, 31, 0.62) 30%, rgba(5, 13, 31, 0.62) 78%, rgba(5, 13, 31, 0.9));
   }
 }
+/* Texto em degradê: background-clip: text só pinta dentro da caixa do elemento. As pernas das letras (g, j, p, q, y)
+   passam da caixa em alguns aparelhos e ficariam sem cor, parecendo cortadas. A caixa ganha folga embaixo (padding) e o
+   espaço é devolvido (margem negativa): a cor cobre a letra inteira e o espaçamento entre as linhas não muda. */
 .ltb-gradiente-texto {
   background: linear-gradient(90deg, #8fd3ff 0%, #60a5fa 35%, #4ade80 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+  padding-bottom: 0.3em;
+  margin-bottom: -0.3em;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
 }
 .ltb-botao-primario,
 .ltb-botao-secundario {
