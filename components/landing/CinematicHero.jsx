@@ -71,6 +71,17 @@ export default function CinematicHero() {
       setEstado((e) => (e === "inicial" ? "estatico" : e));
     }, 7000);
 
+    // A primeira frase entra pelo CSS (ltb-sobe, ~1,65 s a partir do carregamento). Assim que ela termina, a janela das
+    // linhas abre sem esperar o GSAP chegar (numa rede lenta ele demora): parada, nenhuma letra é cortada. O GSAP
+    // fecha de novo só para a saída.
+    const primeira = sequencia.current?.querySelector(".ltb-frase-primeira");
+    const abrirPrimeira = window.setTimeout(() => {
+      primeira?.querySelectorAll(".ltb-linha").forEach((l) => {
+        if (!l.style.overflow) l.style.overflow = "visible";
+      });
+    }, Math.max(0, 1900 - performance.now()));
+    limpar.push(() => window.clearTimeout(abrirPrimeira));
+
     setGiroscopio((g) => ({
       ...g,
       disponivel: movel && typeof window.DeviceOrientationEvent !== "undefined" && !reduzido,
@@ -135,7 +146,14 @@ export default function CinematicHero() {
           ctx = gsap.context(() => {
             const frases = gsap.utils.toArray(".ltb-frase", sequencia.current);
             const linhas = (el) => el.querySelectorAll(".ltb-linha > span");
+            // A "janela" de cada linha (overflow: hidden) só existe para a máscara da entrada e da saída. Com a frase
+            // parada ela fica aberta: nenhuma letra com perna (g, j, p, q) pode ser cortada, seja qual for a fonte ou o
+            // aparelho. Com movimento reduzido não há máscara: aberta o tempo todo.
+            const janelas = (el) => el.querySelectorAll(".ltb-linha");
+            const abrir = (el) => gsap.set(janelas(el), { overflow: "visible" });
+            const fechar = (el) => gsap.set(janelas(el), { overflow: "hidden" });
             gsap.set(frases.slice(1), { autoAlpha: 0 });
+            if (rm) frases.forEach(abrir);
             gsap.set(marca.current, { autoAlpha: 0, y: rm ? 0 : 24 });
 
             // Sequência: cada frase entra por máscara e muda o ritmo da cena.
@@ -151,11 +169,18 @@ export default function CinematicHero() {
                 if (rm) intro.fromTo(frase, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.6, ease: "none" }, inicio);
                 else {
                   intro.set(frase, { autoAlpha: 1 }, inicio);
+                  intro.call(() => fechar(frase), null, inicio);
                   intro.fromTo(linhas(frase), { yPercent: 110 }, { yPercent: 0, duration: ENTRADA, stagger: 0.1 }, inicio);
                 }
               }
               intro.call(() => tunel?.setAlvo(FRASES[i].cena), null, inicio);
               const saida = (i === 0 ? 1.2 : inicio + ENTRADA) + FRASES[i].leitura;
+              if (!rm) {
+                // entrou por inteiro (a última linha tem o atraso do stagger): abre a janela; fecha só para a saída
+                const entrou = i === 0 ? 1.7 : inicio + ENTRADA + 0.1 * (janelas(frase).length - 1) + 0.05;
+                intro.call(() => abrir(frase), null, entrou);
+                intro.call(() => fechar(frase), null, saida);
+              }
               if (rm) intro.to(frase, { autoAlpha: 0, duration: SAIDA, ease: "none" }, saida);
               else {
                 intro.to(linhas(frase), { yPercent: -110, duration: SAIDA, stagger: 0.06, ease: "power2.in" }, saida);
