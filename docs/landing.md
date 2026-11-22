@@ -61,6 +61,11 @@
   depois do clique diz que o WhatsApp abriu com a mensagem pronta, nunca que algo foi enviado.
 - As opções são texto provisório (aprovar com o time). A pré-triagem com banco e painel continua planejada à parte.
 
+## Rodapé
+- `components/landing/RodapeLanding.jsx` com dados de `content/empresa.js`: "Let’s Touch Base · CNPJ 50.487.639/0001-11"
+  (dígitos verificadores conferidos) e "Powered by Brooklyn Software House" (https://brooklynsoftwarehouse.com.br/,
+  nova aba). Espaço extra para o botão flutuante do WhatsApp não cobrir o texto.
+
 ## Segurança
 - Rota pública só `GET`/`HEAD /` (`ROTAS_PUBLICAS` em `proxy.js`); o restante do CRM segue com HTTP Basic.
 - A landing não importa serviços, banco nem variáveis de ambiente do servidor.
