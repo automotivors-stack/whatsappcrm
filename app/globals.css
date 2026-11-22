@@ -89,11 +89,18 @@ body {
       linear-gradient(to bottom, rgba(5, 13, 31, 0.5), rgba(5, 13, 31, 0.62) 30%, rgba(5, 13, 31, 0.62) 78%, rgba(5, 13, 31, 0.9));
   }
 }
+/* Texto em degradê: background-clip: text só pinta dentro da caixa do elemento. As pernas das letras (g, j, p, q, y)
+   passam da caixa em alguns aparelhos e ficariam sem cor, parecendo cortadas. A caixa ganha folga embaixo (padding) e o
+   espaço é devolvido (margem negativa): a cor cobre a letra inteira e o espaçamento entre as linhas não muda. */
 .ltb-gradiente-texto {
   background: linear-gradient(90deg, #8fd3ff 0%, #60a5fa 35%, #4ade80 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+  padding-bottom: 0.3em;
+  margin-bottom: -0.3em;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
 }
 .ltb-botao-primario,
 .ltb-botao-secundario {
@@ -119,7 +126,11 @@ body {
   border-radius: 2px; background: #fff; animation: ltb-rolar 1.8s var(--ease-ltb) infinite;
 }
 @keyframes ltb-rolar { 0% { transform: translateY(0); opacity: 1; } 70% { transform: translateY(8px); opacity: 0; } 100% { opacity: 0; } }
-@keyframes ltb-sobe { from { transform: translateY(110%); } to { transform: translateY(0); } }
+/* Máscara das linhas das frases do hero: fixa e folgada, maior que a letra (acentos em cima, pernas g/j/p/q/y embaixo),
+   em porcentagem da altura da linha. Não depende de abrir/fechar na hora certa nem das medidas da fonte no aparelho.
+   O texto entra e sai de 200% da própria altura, para ficar escondido fora da folga. */
+.ltb-linha { clip-path: inset(-35% -3% -45% -3%); }
+@keyframes ltb-sobe { from { transform: translateY(200%); } to { transform: translateY(0); } }
 
 /* Primeira frase entra por CSS (sem depender do JavaScript) */
 .ltb-frase-primeira .ltb-linha > span { animation: ltb-sobe 1.3s var(--ease-ltb) 0.2s both; }
@@ -195,3 +206,8 @@ body {
 @media (min-width: 640px) {
   .ltb-whatsapp { right: max(28px, env(safe-area-inset-right, 0px)); bottom: max(28px, env(safe-area-inset-bottom, 0px)); }
 }
+
+/* Linha "De onde vem a expressão Let's touch base?": sem o marcador padrão do navegador; a seta gira ao abrir. */
+.ltb-expressao > summary::-webkit-details-marker { display: none; }
+.ltb-expressao-seta { transition: transform 200ms var(--ease-ltb); }
+.ltb-expressao[open] .ltb-expressao-seta { transform: rotate(180deg); }

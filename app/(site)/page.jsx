@@ -8,6 +8,7 @@ import PilaresRoda from "../../components/landing/PilaresRoda.jsx";
 import OperacaoParede from "../../components/landing/OperacaoParede.jsx";
 import ProximasEtapas from "../../components/landing/ProximasEtapas.jsx";
 import FormularioDiagnostico from "../../components/landing/FormularioDiagnostico.jsx";
+import SobreExpressao from "../../components/landing/SobreExpressao.jsx";
 import RodapeLanding from "../../components/landing/RodapeLanding.jsx";
 import WhatsAppFlutuante from "../../components/landing/WhatsAppFlutuante.jsx";
 
@@ -35,6 +36,7 @@ export default function Inicio() {
         <ProximasEtapas />
         <FormularioDiagnostico />
       </main>
+      <SobreExpressao />
       <RodapeLanding />
       <WhatsAppFlutuante />
     </>
