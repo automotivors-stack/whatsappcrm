@@ -126,7 +126,11 @@ body {
   border-radius: 2px; background: #fff; animation: ltb-rolar 1.8s var(--ease-ltb) infinite;
 }
 @keyframes ltb-rolar { 0% { transform: translateY(0); opacity: 1; } 70% { transform: translateY(8px); opacity: 0; } 100% { opacity: 0; } }
-@keyframes ltb-sobe { from { transform: translateY(110%); } to { transform: translateY(0); } }
+/* Máscara das linhas das frases do hero: fixa e folgada, maior que a letra (acentos em cima, pernas g/j/p/q/y embaixo),
+   em porcentagem da altura da linha. Não depende de abrir/fechar na hora certa nem das medidas da fonte no aparelho.
+   O texto entra e sai de 200% da própria altura, para ficar escondido fora da folga. */
+.ltb-linha { clip-path: inset(-35% -3% -45% -3%); }
+@keyframes ltb-sobe { from { transform: translateY(200%); } to { transform: translateY(0); } }
 
 /* Primeira frase entra por CSS (sem depender do JavaScript) */
 .ltb-frase-primeira .ltb-linha > span { animation: ltb-sobe 1.3s var(--ease-ltb) 0.2s both; }
