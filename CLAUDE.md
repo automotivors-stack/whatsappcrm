@@ -97,6 +97,8 @@ Resend (e-mail) · Anthropic (`@anthropic-ai/sdk`, IA do diagnóstico). Gerencia
 ## Como trabalhar
 
 - Mudanças pequenas, um commit por passo, mensagem em português. Branch de trabalho: `claude/lucid-ride-wde5o1`.
+- Produção na Vercel (projeto `alexandre-theofilo/whatsappcrm`) sai da `main`; o branch de trabalho gera só prévias.
+  Nada vai para a `main` sem PR aprovado e juntado pelo consultor.
 - Migração publicada nunca é reescrita: correção vira migração nova; só acrescentar (nada destrutivo sem aprovação).
 - Antes de dizer que terminou: `npm test` e `npm run build` passando; para UI, abrir no navegador (Playwright) e olhar.
 - Valores comerciais (taxas, metas, limites) ficam em configuração; nunca inventar. Na dúvida sobre regra de negócio, perguntar.

@@ -169,3 +169,15 @@ nunca mostram telefone completo nem conteúdo de mensagem.
 | 4. Webhook cadastrado no domínio de produção (sem webhook antigo) | ☐ |
 | 5. Teste de fumaça: resposta, resumo, SIM, card | ☐ |
 | 6. Aquecimento planejado, política de privacidade atualizada | ☐ |
+
+## Situação atual (22/11/2026)
+
+- Projeto na Vercel: `alexandre-theofilo/whatsappcrm` (plano Hobby), ligado ao GitHub `automotivors-stack/whatsappcrm`.
+- **Produção sai da `main`.** O branch de trabalho (`claude/lucid-ride-wde5o1`) gera só prévias; mudança vai para a
+  `main` por PR aprovado pelo consultor. Endereço de produção provisório: https://whatsappcrm-xi-eight.vercel.app
+  (domínio definitivo: `letstouchbase.com.br`, ainda não comprado).
+- Proteção de acesso: deve proteger **só as prévias** (Settings → Deployment Protection → Vercel Authentication →
+  "Only Preview Deployments"). Com "todas exceto domínio próprio", o `.vercel.app` de produção pede login da Vercel e o
+  OpenWA não consegue chamar o webhook.
+- Variáveis de ambiente: nenhuma cadastrada ainda. A landing funciona sem elas; o CRM responde 503 até cadastrar
+  (lista na seção de variáveis acima).
