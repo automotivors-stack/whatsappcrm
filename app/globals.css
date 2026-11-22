@@ -206,3 +206,8 @@ body {
 @media (min-width: 640px) {
   .ltb-whatsapp { right: max(28px, env(safe-area-inset-right, 0px)); bottom: max(28px, env(safe-area-inset-bottom, 0px)); }
 }
+
+/* Linha "De onde vem a expressão Let's touch base?": sem o marcador padrão do navegador; a seta gira ao abrir. */
+.ltb-expressao > summary::-webkit-details-marker { display: none; }
+.ltb-expressao-seta { transition: transform 200ms var(--ease-ltb); }
+.ltb-expressao[open] .ltb-expressao-seta { transform: rotate(180deg); }

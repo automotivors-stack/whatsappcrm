@@ -61,6 +61,11 @@
   depois do clique diz que o WhatsApp abriu com a mensagem pronta, nunca que algo foi enviado.
 - As opções são texto provisório (aprovar com o time). A pré-triagem com banco e painel continua planejada à parte.
 
+## Linha "De onde vem e o que significa a expressão Let’s touch base?"
+- `components/landing/SobreExpressao.jsx` com o texto de `content/expressao.js` (enviado pelo time em 22/11/2026),
+  logo antes do rodapé. `<details>`/`<summary>` nativos: abre e fecha com a seta, sem JavaScript, pelo teclado e com
+  leitor de tela.
+
 ## Rodapé
 - `components/landing/RodapeLanding.jsx` com dados de `content/empresa.js`: "Let’s Touch Base · CNPJ 50.487.639/0001-11"
   (dígitos verificadores conferidos) e "Powered by Brooklyn Software House" (https://brooklynsoftwarehouse.com.br/,
