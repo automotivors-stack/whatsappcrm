@@ -51,6 +51,8 @@ Resend (e-mail) · Anthropic (`@anthropic-ai/sdk`, IA do diagnóstico). Gerencia
 - `lib/custosParceiros.js` (tabelas de custo) · `lib/precificacao.js` (spread) · `lib/proposta.js` (texto ao cliente)
 - `services/comunicacao.js` + `app/api/whatsapp/send`, `app/api/email/send` (disparos)
 - `services/dashboard.js` + `app/api/dashboard/metrics` · `app/(crm)/kanban`, `app/(crm)/dashboard`, `components/`
+- `lib/piloto.js` — modo piloto (`PILOTO_ATIVO`, desligado por padrão): contato novo só entra com a frase do site
+  ("Quero um diagnóstico") ou na lista `PILOTO_NUMEROS_TESTE`; o resto é ignorado sem gravar nada (`tests/piloto.test.js`)
 - `proxy.js` — usuário e senha (HTTP Basic) em tudo, menos a lista `ROTAS_PUBLICAS` (`GET`/`HEAD /` e `POST` do webhook);
   `tests/acessoPublico.test.js` mapeia todas as rotas e falha se algo novo abrir sem autenticação
 - Landing pública: `app/(site)/page.jsx` + `components/landing/` (hero WebGL em `tunel.js`, GSAP/ScrollTrigger,

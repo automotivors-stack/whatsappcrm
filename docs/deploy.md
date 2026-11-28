@@ -179,5 +179,7 @@ nunca mostram telefone completo nem conteúdo de mensagem.
 - Proteção de acesso: deve proteger **só as prévias** (Settings → Deployment Protection → Vercel Authentication →
   "Only Preview Deployments"). Com "todas exceto domínio próprio", o `.vercel.app` de produção pede login da Vercel e o
   OpenWA não consegue chamar o webhook.
+- Modo piloto (`PILOTO_ATIVO`, opcional): a IA só atende contato novo vindo do site ou da lista de teste
+  (`docs/roteiro-homologacao.md`, item 5.1).
 - Variáveis de ambiente: nenhuma cadastrada ainda. A landing funciona sem elas; o CRM responde 503 até cadastrar
   (lista na seção de variáveis acima).

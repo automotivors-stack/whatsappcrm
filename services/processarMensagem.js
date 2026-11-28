@@ -7,6 +7,7 @@ import { chatIdDoTelefone, digitos, mascarar, mesmoTelefone, telefoneDoChatId } 
 import { enviarMensagemWhatsApp } from "./whatsappService.js";
 import { responderComAgente } from "./agente.js";
 import { finalizarDiagnostico, tratarRespostaAdmin } from "./aprovacao.js";
+import { admitidoNoPiloto, configPiloto } from "../lib/piloto.js";
 
 export const STATUS_PAUSADO = "pausado_humano";
 
@@ -17,6 +18,7 @@ export function contextoPadrao() {
     enviar: enviarMensagemWhatsApp,
     adminNumero: process.env.ADMIN_WHATSAPP_NUMBER,
     agente: responderComAgente,
+    piloto: configPiloto(),
   };
 }
 
@@ -68,6 +70,16 @@ export async function processarEventoOpenWA(ctx, payload) {
     // Deduplicação idempotente: o mesmo messageId só é processado uma vez.
     if (!(await registrarEventoSeNovo(msg.id, "openwa", db))) return { acao: "duplicado" };
     return tratarRespostaAdmin(ctx, msg.body);
+  }
+
+  // Modo piloto: contato novo só entra se veio do site (frase do formulário) ou é número de teste.
+  // Fora disso, nada é gravado (nem o evento): conversas pessoais do chip não viram contato.
+  if (ctx.piloto?.ativo) {
+    const existe = await db.execute({ sql: "SELECT 1 FROM contatos WHERE phone_number = ?", args: [telefone] });
+    if (existe.rows.length === 0 && !admitidoNoPiloto(ctx.piloto, telefone, msg.body)) {
+      console.info(`[piloto] mensagem de ${mascarar(telefone)} ignorada (fora do piloto)`);
+      return { acao: "ignorado_piloto" };
+    }
   }
 
   // Deduplicação + contato + histórico numa transação só: ou o evento fica registrado junto com
