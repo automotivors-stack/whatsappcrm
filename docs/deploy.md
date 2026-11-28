@@ -39,7 +39,7 @@ valem mais que o `.env`):
 TURSO_DATABASE_URL="libsql://<url-de-producao>" TURSO_AUTH_TOKEN="<token-de-producao>" npm run verificar -- banco
 ```
 
-Conferir: `✅ Conectado (Turso remoto)`, migrações 1 a 5, contatos 0, oportunidades 0.
+Conferir: `✅ Conectado (Turso remoto)`, migrações 1 a 6, contatos 0, oportunidades 0.
 
 ---
 
@@ -81,6 +81,9 @@ Copie da homologação, trocando o banco:
 | Variável | Valor de produção |
 |---|---|
 | `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN` | os do banco **de produção** (etapa 1) |
+| `BETTER_AUTH_SECRET` | `openssl rand -base64 32` (área do cliente) |
+| `BETTER_AUTH_URL` | endereço público do site, sem barra no fim |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | opcionais: login com o Google (redirecionamento `<BETTER_AUTH_URL>/api/auth/callback/google`) |
 | `OPENWA_BASE_URL` | `https://openwa.seudominio.com.br` (sem barra no fim) |
 | `OPENWA_API_KEY`, `OPENWA_SESSION_ID` | os da VPS |
 | `OPENWA_WEBHOOK_SECRET` | um valor **novo** (`openssl rand -hex 32`), diferente do da homologação |

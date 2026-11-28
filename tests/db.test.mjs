@@ -31,7 +31,7 @@ test("cria as 5 tabelas com as colunas exatas", async () => {
 
 test("migração é idempotente", async () => {
   const db = novoBanco();
-  assert.equal((await migrar(db)).length, 5);
+  assert.equal((await migrar(db)).length, 6);
   assert.equal((await migrar(db)).length, 0);
 });
 

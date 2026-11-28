@@ -55,7 +55,12 @@ Resend (e-mail) · Anthropic (`@anthropic-ai/sdk`, IA do diagnóstico). Gerencia
   ("Quero um diagnóstico") ou na lista `PILOTO_NUMEROS_TESTE`; o resto é ignorado sem gravar nada (`tests/piloto.test.js`)
 - `lib/origemSite.js` — o servidor lê a mensagem do formulário da landing e grava `contatos.origem = 'site'` e
   `dados_site` (a primeira origem fica); a IA recebe `<formulario_site>` e não pergunta de novo; aviso e dossiê mostram a origem
-- `proxy.js` — usuário e senha (HTTP Basic) em tudo, menos a lista `ROTAS_PUBLICAS` (`GET`/`HEAD /` e `POST` do webhook);
+- Área do cliente: `lib/auth.js` (Better Auth, e-mail e senha ou Google; tabelas `cliente_*`, migração 6) ·
+  `app/(site)/entrar`, `cadastro`, `cliente` · `services/contasClientes.js` + `app/api/contas-clientes` (consultor libera,
+  recusa e vincula ao card; banner "Contas de clientes" no Kanban). Toda conta nasce `pendente`; `status_acesso` e
+  `oportunidade_id` nunca vêm do navegador. O cliente vê só a fase (texto de cliente) e as mensagens entregues; nunca custo,
+  spread, margem, precificação, fornecedor ou dossiê (`tests/areaCliente.test.js`). Conta de cliente nunca abre o CRM
+- `proxy.js` — usuário e senha (HTTP Basic) em tudo, menos a lista `ROTAS_PUBLICAS` (landing, webhook, telas do cliente e `/api/auth/`);
   `tests/acessoPublico.test.js` mapeia todas as rotas e falha se algo novo abrir sem autenticação
 - Landing pública: `app/(site)/page.jsx` + `components/landing/` (hero WebGL em `tunel.js`, GSAP/ScrollTrigger,
   modo estático para `prefers-reduced-motion` e sem JS). Não lê banco nem dados do CRM. Plano: `docs/landing.md`

@@ -30,9 +30,9 @@ export default function LandingHeader() {
           Let&rsquo;s Touch Base<span className="text-ltb-green">.</span>
         </a>
         <nav aria-label="Acessos" className="flex items-center gap-2 sm:gap-4">
-          {/* <a> comum (sem prefetch): a área do consultor pede usuário e senha. */}
-          <a href="/dashboard" className="hidden rounded-full px-3 py-2 text-sm font-medium text-slate-200 hover:text-white sm:inline-flex">
-            Entrar
+          {/* Área do cliente (login e cadastro). O acesso do consultor fica na tela de login. */}
+          <a href="/entrar" className="inline-flex min-h-10 items-center rounded-full border border-white/25 px-4 text-sm font-semibold text-white hover:bg-white/10">
+            Login
           </a>
           <a href={AGENDA_URL} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-10 items-center whitespace-nowrap rounded-full bg-ltb-blue px-4 text-sm font-semibold text-white hover:bg-blue-700">
             {/* Em telas estreitas, texto curto para caber numa linha ao lado da marca. */}
