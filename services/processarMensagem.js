@@ -8,6 +8,7 @@ import { enviarMensagemWhatsApp } from "./whatsappService.js";
 import { responderComAgente } from "./agente.js";
 import { finalizarDiagnostico, tratarRespostaAdmin } from "./aprovacao.js";
 import { admitidoNoPiloto, configPiloto } from "../lib/piloto.js";
+import { lerMensagemDoSite } from "../lib/origemSite.js";
 
 export const STATUS_PAUSADO = "pausado_humano";
 
@@ -84,7 +85,9 @@ export async function processarEventoOpenWA(ctx, payload) {
 
   // Deduplicação + contato + histórico numa transação só: ou o evento fica registrado junto com
   // a mensagem salva, ou nada fica (antes, uma falha no meio marcava o evento e perdia a mensagem).
-  const nome = msg.contact?.pushName || msg.contact?.name || null;
+  const doSite = msg.body ? lerMensagemDoSite(msg.body, ctx.piloto?.gatilho) : null;
+  // O nome digitado no formulário vale mais que o nome do perfil do WhatsApp.
+  const nome = doSite?.formulario.nome || msg.contact?.pushName || msg.contact?.name || null;
   const conteudo = msg.body ? String(msg.body) : `[${msg.type ?? "mensagem"}]`;
   let status;
   const tx = await db.transaction("write");
@@ -98,10 +101,14 @@ export async function processarEventoOpenWA(ctx, payload) {
       return { acao: "duplicado" };
     }
     await tx.execute({
-      sql: `INSERT INTO contatos (phone_number, nome) VALUES (?, ?)
+      // Origem e dados do site só preenchem o que estiver vazio: a primeira origem fica.
+      sql: `INSERT INTO contatos (phone_number, nome, origem, dados_site) VALUES (?, ?, ?, ?)
             ON CONFLICT (phone_number) DO UPDATE
-            SET nome = COALESCE(contatos.nome, excluded.nome), updated_at = CURRENT_TIMESTAMP`,
-      args: [telefone, nome],
+            SET nome = COALESCE(contatos.nome, excluded.nome),
+                origem = COALESCE(contatos.origem, excluded.origem),
+                dados_site = COALESCE(contatos.dados_site, excluded.dados_site),
+                updated_at = CURRENT_TIMESTAMP`,
+      args: [telefone, nome, doSite?.origem ?? null, doSite ? JSON.stringify(doSite.formulario) : null],
     });
     await tx.execute({
       sql: "INSERT INTO mensagens_historico (phone_number, role, content) VALUES (?, 'user', ?)",

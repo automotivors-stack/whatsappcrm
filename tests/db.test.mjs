@@ -8,7 +8,7 @@ const novoBanco = () => createClient({ url: ":memory:" });
 
 const ESPERADO = {
   contatos: ["phone_number", "nome", "tipo_pessoa", "documento", "descricao_negocio", "volume_mensal",
-    "status_relacionamento", "created_at", "updated_at", "dados_diagnostico"],
+    "status_relacionamento", "created_at", "updated_at", "dados_diagnostico", "origem", "dados_site"],
   mensagens_historico: ["id", "phone_number", "role", "content", "created_at"],
   oportunidades: ["id", "phone_number", "tipo_pessoa", "nome_ou_razao_social", "documento", "descricao_negocio",
     "onde_opera_hoje", "volume_mensal", "numero_transacoes", "taxas_atuais", "taxa_med_operacao",
@@ -31,7 +31,7 @@ test("cria as 5 tabelas com as colunas exatas", async () => {
 
 test("migração é idempotente", async () => {
   const db = novoBanco();
-  assert.equal((await migrar(db)).length, 4);
+  assert.equal((await migrar(db)).length, 5);
   assert.equal((await migrar(db)).length, 0);
 });
 

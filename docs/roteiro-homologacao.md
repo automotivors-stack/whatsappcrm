@@ -148,6 +148,10 @@ Se o número do bot ainda recebe conversas que não são leads, ligue o piloto n
 - Mensagem enviada pelo formulário ou pelo botão do WhatsApp do site: a IA atende e o contato segue normalmente.
 - Quem já é contato continua sendo atendido, com ou sem a frase.
 
+Quem chega pelo formulário do site: a IA cumprimenta pelo nome, comenta a prioridade e o gargalo marcados e não pergunta
+de novo nome, empresa, prioridade ou gargalo. O aviso no seu WhatsApp traz a linha `• Origem: site (...)` e o dossiê no
+Kanban mostra o bloco "Veio do site".
+
 Para encerrar o piloto, apague `PILOTO_ATIVO` (ou deixe `false`) e publique de novo.
 
 ### 5a. Bot atendendo e qualificando

@@ -40,11 +40,21 @@ export function limparDiagnostico(diagnostico, telefone) {
   return dados;
 }
 
-export function formatarAvisoAdmin(dados, id) {
+/** Linha da origem para o aviso: só quando o contato veio do site. Valores já vêm limpos (lib/origemSite.js). */
+export function linhaOrigem(origem) {
+  if (origem?.origem !== "site") return null;
+  const f = origem.formulario ?? {};
+  const extras = [f.prioridade && `prioridade: ${f.prioridade}`, f.gargalo && `gargalo: ${f.gargalo}`].filter(Boolean);
+  return `• Origem: site${extras.length ? ` (${extras.join("; ")})` : ""}`;
+}
+
+export function formatarAvisoAdmin(dados, id, origem = null) {
   const v = (campo) => dados[campo] ?? NAO_INFORMADO;
   const volume = dados.volume_mensal ? `${dados.volume_mensal}/mês` : NAO_INFORMADO;
+  const linhaSite = linhaOrigem(origem);
   return [
     "🔔 *Novo diagnóstico de meios de pagamento finalizado!*",
+    ...(linhaSite ? [linhaSite] : []),
     `• Cliente: ${v("nome_ou_razao_social")}`,
     `• Documento: ${v("documento")}`,
     `• Volume Declarado: ${volume}`,
@@ -55,6 +65,17 @@ export function formatarAvisoAdmin(dados, id) {
     "Deseja implementar este lead no CRM? Responda *SIM* para cadastrar no Kanban ou *NÃO* para descartar.",
     `_Código #${id}. Se houver mais de um pendente, responda SIM ${id} ou NÃO ${id}._`,
   ].join("\n");
+}
+
+/** Origem gravada no contato (processarMensagem.js); null se não veio do site ou se a leitura falhar. */
+async function origemDoContato(db, telefone) {
+  try {
+    const { rows } = await db.execute({ sql: "SELECT origem, dados_site FROM contatos WHERE phone_number = ?", args: [telefone] });
+    if (rows[0]?.origem !== "site") return null;
+    return { origem: "site", formulario: JSON.parse(rows[0].dados_site ?? "{}") ?? {} };
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -91,7 +112,7 @@ export async function finalizarDiagnostico(ctx, telefone, diagnostico) {
   // O lead nunca se perde: a pendência já está gravada. Se o WhatsApp do consultor falhar,
   // ela fica com aviso_enviado = 0 e aparece no aviso do painel (Kanban e Dashboard).
   try {
-    await enviar(chatIdDoTelefone(adminNumero), formatarAvisoAdmin(dados, id));
+    await enviar(chatIdDoTelefone(adminNumero), formatarAvisoAdmin(dados, id, await origemDoContato(db, telefone)));
   } catch (erro) {
     console.error(
       `[aprovacao] aviso da pendência #${id} (${mascarar(telefone)}) NÃO chegou ao consultor: ${erro?.message ?? erro}. ` +

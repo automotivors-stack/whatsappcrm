@@ -79,3 +79,55 @@ test("piloto desligado: qualquer mensagem segue o fluxo normal", async () => {
   const r = await processarEventoOpenWA(ctxCom({ ativo: false }), evento("p5", "5511944443333", "oi"));
   assert.equal(r.acao, "respondido");
 });
+
+// ---- Origem: site (leitura do formulário pelo servidor) ----
+const { lerMensagemDoSite } = await import("../lib/origemSite.js");
+const { formatarAvisoAdmin, linhaOrigem } = await import("../services/aprovacao.js");
+const { montarEntrada } = await import("../services/aiDiagnosticService.js");
+
+test("lerMensagemDoSite: lê os campos do formulário e ignora o que não veio do site", () => {
+  const texto = mensagemDiagnostico({ nome: "Ana Souza", empresa: "Loja *Ana*", prioridade: "Reduzir taxas", gargalo: "" });
+  assert.deepEqual(lerMensagemDoSite(texto), {
+    origem: "site",
+    formulario: { nome: "Ana Souza", empresa: "Loja Ana", prioridade: "Reduzir taxas" },
+  });
+  assert.deepEqual(lerMensagemDoSite("Quero um diagnóstico do meu departamento comercial"), { origem: "site", formulario: {} });
+  assert.equal(lerMensagemDoSite("Nome: Fulano\nEmpresa: X"), null, "sem a frase do site não é do site");
+  const longo = lerMensagemDoSite(`Quero um diagnóstico\nNome: ${"a".repeat(300)}\nNome: outro`);
+  assert.equal(longo.formulario.nome.length, 80);
+});
+
+test("contato do site: origem e formulário gravados; IA recebe o formulário; aviso traz a origem", async () => {
+  const entradas = [];
+  const ctx = { ...ctxCom(PILOTO), agente: async ({ db: d, telefone }) => {
+    const { rows } = await d.execute({ sql: "SELECT origem, dados_site, nome FROM contatos WHERE phone_number = ?", args: [telefone] });
+    entradas.push(rows[0]);
+    return { texto: "oi" };
+  } };
+  const texto = mensagemDiagnostico({ nome: "Bruno", empresa: "Bruno ME", prioridade: "Reduzir taxas", gargalo: "Chargeback" });
+  const r = await processarEventoOpenWA(ctx, evento("s1", "5511933332222", texto));
+  assert.equal(r.acao, "respondido");
+  assert.equal(entradas[0].origem, "site");
+  assert.equal(entradas[0].nome, "Bruno");
+  assert.deepEqual(JSON.parse(entradas[0].dados_site), { nome: "Bruno", empresa: "Bruno ME", prioridade: "Reduzir taxas", gargalo: "Chargeback" });
+
+  // Mensagem seguinte com outra frase do site não troca a origem nem os dados.
+  await processarEventoOpenWA(ctx, evento("s2", "5511933332222", "Quero um diagnóstico\nNome: Outro"));
+  assert.equal(JSON.parse(entradas[1].dados_site).nome, "Bruno");
+
+  const entrada = montarEntrada({ historico: [], dados: {}, faltando: [], modo: "diagnostico", formularioSite: JSON.parse(entradas[0].dados_site) });
+  assert.match(entrada, /<formulario_site>\{"Nome":"Bruno","Empresa":"Bruno ME","Prioridade":"Reduzir taxas","Principal gargalo":"Chargeback"\}<\/formulario_site>/);
+  assert.doesNotMatch(montarEntrada({ historico: [], dados: {}, faltando: [], modo: "diagnostico" }), /formulario_site/);
+
+  const aviso = formatarAvisoAdmin({}, 7, { origem: "site", formulario: { prioridade: "Reduzir taxas", gargalo: "Chargeback" } });
+  assert.match(aviso, /• Origem: site \(prioridade: Reduzir taxas; gargalo: Chargeback\)/);
+  assert.equal(linhaOrigem(null), null);
+  assert.doesNotMatch(formatarAvisoAdmin({}, 7), /Origem/);
+});
+
+test("contato que não veio do site fica sem origem", async () => {
+  await processarEventoOpenWA(ctxCom({ ativo: false }), evento("s3", "5511922221111", "bom dia"));
+  const { rows } = await db.execute("SELECT origem, dados_site FROM contatos WHERE phone_number = '5511922221111'");
+  assert.equal(rows[0].origem, null);
+  assert.equal(rows[0].dados_site, null);
+});
