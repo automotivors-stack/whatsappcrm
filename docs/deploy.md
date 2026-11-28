@@ -39,7 +39,7 @@ valem mais que o `.env`):
 TURSO_DATABASE_URL="libsql://<url-de-producao>" TURSO_AUTH_TOKEN="<token-de-producao>" npm run verificar -- banco
 ```
 
-Conferir: `✅ Conectado (Turso remoto)`, migrações 1 a 4, contatos 0, oportunidades 0.
+Conferir: `✅ Conectado (Turso remoto)`, migrações 1 a 5, contatos 0, oportunidades 0.
 
 ---
 
