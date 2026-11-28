@@ -93,3 +93,9 @@ test("migração no build: só no build de produção da Vercel com banco config
   assert.equal(deveMigrar({ VERCEL_ENV: "production" }), false);
   assert.equal(deveMigrar({}), false);
 });
+
+test("token do banco: aceita qualquer TURSO…AUTH_TOKEN da integração e lista só nomes", async () => {
+  const { tokenDoBanco, nomesVariaveisTurso } = await import("../lib/db.js");
+  assert.equal(tokenDoBanco({ TURSO_DATABASE_TURSO_AUTH_TOKEN: "c" }), "c");
+  assert.deepEqual(nomesVariaveisTurso({ TURSO_DATABASE_URL: "x", OUTRA: "y", TURSO_B: "z" }), ["TURSO_B", "TURSO_DATABASE_URL"]);
+});
