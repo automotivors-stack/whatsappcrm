@@ -4,7 +4,7 @@ import { test, before } from "node:test";
 import assert from "node:assert/strict";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative, sep } from "node:path";
-import { proxy, ROTAS_PUBLICAS, config } from "../proxy.js";
+import { proxy, rotaPublica, config } from "../proxy.js";
 
 const APP = new URL("../app/", import.meta.url).pathname;
 
@@ -29,7 +29,7 @@ const req = (metodo, caminho, auth) => new Request(`http://crm.exemplo${caminho}
   method: metodo, headers: auth ? { authorization: auth } : {},
 });
 const basic = (u, s) => `Basic ${btoa(`${u}:${s}`)}`;
-const publica = (m, c) => ROTAS_PUBLICAS.some((r) => r.caminho === c && r.metodos.includes(m));
+const publica = (m, c) => rotaPublica(m, c);
 
 before(() => Object.assign(process.env, { CRM_USUARIO: "consultor", CRM_SENHA: "senha-forte" }));
 
@@ -53,7 +53,11 @@ test("sem senha, só as exceções explícitas abrem; todo o resto responde 401"
       }
     }
   }
-  assert.deepEqual(abertas.sort(), ["GET /", "HEAD /", "POST /api/webhooks/whatsapp"]);
+  assert.deepEqual(abertas.sort(), [
+    "GET /", "GET /api/auth/1", "GET /cadastro", "GET /cliente", "GET /entrar",
+    "HEAD /", "HEAD /cadastro", "HEAD /cliente", "HEAD /entrar",
+    "POST /api/auth/1", "POST /api/webhooks/whatsapp",
+  ]);
 });
 
 test("com a senha certa, as rotas do CRM abrem; com a errada, não", () => {
@@ -65,6 +69,9 @@ test("variações do caminho público não furam a regra", () => {
   for (const [m, c] of [
     ["POST", "/"], ["PATCH", "/"], ["GET", "/api/webhooks/whatsapp"], ["POST", "/api/webhooks/whatsappX"],
     ["POST", "/api/webhooks/outro"], ["GET", "/index"], ["GET", "/api"], ["GET", "/api/"],
+    // Área do cliente: só as telas e o login abrem; o CRM e suas APIs continuam fechados.
+    ["GET", "/api/auth"], ["GET", "/api/authx/1"], ["PATCH", "/api/auth/sign-in/email"], ["POST", "/cliente"],
+    ["GET", "/cliente/outra"], ["GET", "/entrar/x"], ["GET", "/api/contas-clientes"], ["POST", "/api/contas-clientes/abc"],
   ]) {
     assert.equal(proxy(req(m, c))?.status, 401, `${m} ${c}`);
   }

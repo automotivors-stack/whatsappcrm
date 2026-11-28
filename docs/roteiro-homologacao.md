@@ -138,6 +138,22 @@ bloqueado", veja o item 4 da preparação.
 
 Abra `https://<sua-url>/dashboard` e entre com `CRM_USUARIO`/`CRM_SENHA`.
 
+### 5.1 Modo piloto (chip que também recebe outras conversas)
+
+Se o número do bot ainda recebe conversas que não são leads, ligue o piloto na Vercel:
+`PILOTO_ATIVO=true` e, se quiser testar de outro celular sem passar pelo site, `PILOTO_NUMEROS_TESTE=55DDDNUMERO`.
+
+- Mensagem de quem nunca falou com o bot, sem a frase "Quero um diagnóstico": **ignorada**, nada é gravado e a IA
+  não responde (log `[piloto] ... ignorada`).
+- Mensagem enviada pelo formulário ou pelo botão do WhatsApp do site: a IA atende e o contato segue normalmente.
+- Quem já é contato continua sendo atendido, com ou sem a frase.
+
+Quem chega pelo formulário do site: a IA cumprimenta pelo nome, comenta a prioridade e o gargalo marcados e não pergunta
+de novo nome, empresa, prioridade ou gargalo. O aviso no seu WhatsApp traz a linha `• Origem: site (...)` e o dossiê no
+Kanban mostra o bloco "Veio do site".
+
+Para encerrar o piloto, apague `PILOTO_ATIVO` (ou deixe `false`) e publique de novo.
+
 ### 5a. Bot atendendo e qualificando
 
 Use um **terceiro celular** (nem o do bot, nem o do consultor). Envie ao número do bot:

@@ -26,13 +26,18 @@ export const MODO_IA = "ia_ativa";
 const MODOS_BOT = [MODO_HUMANO, MODO_IA];
 
 // O card traz junto o modo do bot do contato (status_relacionamento fica em `contatos`).
-const SELECT_LEAD = `SELECT o.*, c.status_relacionamento
+const SELECT_LEAD = `SELECT o.*, c.status_relacionamento, c.origem, c.dados_site
   FROM oportunidades o LEFT JOIN contatos c ON c.phone_number = o.phone_number`;
 
 function paraObjeto(linha) {
   const lead = { ...linha };
   lead.id = Number(lead.id);
   lead.saque_terceiros = lead.saque_terceiros === null ? null : Boolean(Number(lead.saque_terceiros));
+  try {
+    lead.dados_site = lead.dados_site ? JSON.parse(lead.dados_site) : null;
+  } catch {
+    lead.dados_site = null;
+  }
   try {
     lead.dados_precificacao = lead.dados_precificacao ? JSON.parse(lead.dados_precificacao) : null;
   } catch {

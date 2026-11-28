@@ -5,17 +5,28 @@
 // tests/acessoPublico.test.js percorre todas as rotas do app e falha se alguma fora da lista abrir sem senha.
 
 /**
- * Únicas exceções, por caminho EXATO e método:
+ * Únicas exceções, por caminho EXATO (ou prefixo, quando indicado) e método:
  *  - "/" (GET/HEAD): landing institucional; não lê banco nem dados do CRM.
  *  - "/api/webhooks/whatsapp" (POST): eventos do OpenWA, protegidos pela assinatura HMAC (webhookOpenwa.js).
+ *  - "/entrar", "/cadastro" (GET/HEAD): telas de login e cadastro da área do cliente; não leem dados do CRM.
+ *  - "/cliente" (GET/HEAD): área do cliente; só mostra algo com a sessão do cliente (lib/auth.js), e só o card
+ *    vinculado a ele pelo consultor (services/contasClientes.js). Sem sessão, manda para /entrar.
+ *  - prefixo "/api/auth/" (GET/POST): rotas do Better Auth (cadastro, entrada, Google, sessão, saída).
+ * Conta de cliente nunca abre o CRM: o restante continua exigindo a senha do consultor.
  */
 export const ROTAS_PUBLICAS = [
   { caminho: "/", metodos: ["GET", "HEAD"] },
   { caminho: "/api/webhooks/whatsapp", metodos: ["POST"] },
+  { caminho: "/entrar", metodos: ["GET", "HEAD"] },
+  { caminho: "/cadastro", metodos: ["GET", "HEAD"] },
+  { caminho: "/cliente", metodos: ["GET", "HEAD"] },
+  { prefixo: "/api/auth/", metodos: ["GET", "POST"] },
 ];
 
 export function rotaPublica(metodo, caminho) {
-  return ROTAS_PUBLICAS.some((r) => r.caminho === caminho && r.metodos.includes(metodo));
+  return ROTAS_PUBLICAS.some(
+    (r) => r.metodos.includes(metodo) && (r.prefixo ? caminho.startsWith(r.prefixo) && caminho.length > r.prefixo.length : r.caminho === caminho),
+  );
 }
 
 function iguais(a, b) {

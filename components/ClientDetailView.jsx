@@ -413,6 +413,23 @@ export default function ClientDetailView({ leadId, faseDesejada, onFechar, onAtu
                 </dl>
               </Bloco>
 
+              {lead.origem === "site" && (
+                <Bloco titulo="Veio do site (formulário de diagnóstico)">
+                  <dl className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
+                    {[["nome", "Nome"], ["empresa", "Empresa"], ["prioridade", "Prioridade"], ["gargalo", "Principal gargalo"]].map(
+                      ([campo, rotulo]) => (
+                        <div key={campo} className="min-w-0">
+                          <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">{rotulo}</dt>
+                          <dd className="break-words text-sm text-slate-900">
+                            {lead.dados_site?.[campo] || <span className="text-slate-400">Não informado</span>}
+                          </dd>
+                        </div>
+                      ),
+                    )}
+                  </dl>
+                </Bloco>
+              )}
+
               {/* Bloco 2 */}
               <Bloco titulo="Resumo executivo da IA">
                 <p className="whitespace-pre-wrap text-sm leading-relaxed text-slate-800">
