@@ -77,3 +77,19 @@ test("deduplicação de webhook: mesmo message_id só entra uma vez", async () =
   const { rows } = await db.execute("SELECT COUNT(*) AS n FROM eventos_processados");
   assert.equal(Number(rows[0].n), 1);
 });
+
+test("token do banco: aceita o nome da integração Turso da Vercel", async () => {
+  const { tokenDoBanco } = await import("../lib/db.js");
+  assert.equal(tokenDoBanco({ TURSO_AUTH_TOKEN: "a" }), "a");
+  assert.equal(tokenDoBanco({ TURSO_DATABASE_AUTH_TOKEN: "b" }), "b");
+  assert.equal(tokenDoBanco({ TURSO_AUTH_TOKEN: "a", TURSO_DATABASE_AUTH_TOKEN: "b" }), "a");
+  assert.equal(tokenDoBanco({}), undefined);
+});
+
+test("migração no build: só no build de produção da Vercel com banco configurado", async () => {
+  const { deveMigrar } = await import("../scripts/migrarNoBuild.mjs");
+  assert.equal(deveMigrar({ VERCEL_ENV: "production", TURSO_DATABASE_URL: "libsql://x" }), true);
+  assert.equal(deveMigrar({ VERCEL_ENV: "preview", TURSO_DATABASE_URL: "libsql://x" }), false);
+  assert.equal(deveMigrar({ VERCEL_ENV: "production" }), false);
+  assert.equal(deveMigrar({}), false);
+});

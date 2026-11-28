@@ -43,6 +43,13 @@ Conferir: `✅ Conectado (Turso remoto)`, migrações 1 a 6, contatos 0, oportun
 
 ---
 
+**Migrações automáticas:** o `npm run build` roda `scripts/migrarNoBuild.mjs` antes do `next build`. No build de
+produção da Vercel (`VERCEL_ENV=production`, com `TURSO_DATABASE_URL`), ele aplica as migrações pendentes; se falhar,
+o build falha e a versão anterior continua no ar. Prévias e builds locais pulam. Com a integração Turso da Vercel
+(prefixo `TURSO_DATABASE`), o token chega como `TURSO_DATABASE_AUTH_TOKEN`, aceito pelo sistema.
+
+---
+
 ## 2. OpenWA na VPS
 
 1. Use o `docker-compose.yml` **oficial** do OpenWA (já traz `restart: unless-stopped` e volumes para a sessão do

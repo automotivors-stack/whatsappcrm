@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "node scripts/migrarNoBuild.mjs && next build",
     "start": "next start",
     "db:migrate": "node --env-file-if-exists=.env --env-file-if-exists=.env.local scripts/migrate.mjs",
     "seed": "node --env-file-if-exists=.env --env-file-if-exists=.env.local scripts/seed.js",

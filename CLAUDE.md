@@ -33,7 +33,8 @@ Resend (e-mail) · Anthropic (`@anthropic-ai/sdk`, IA do diagnóstico). Gerencia
 - `npm run dev` / `npm run build` / `npm start`
 - `npm test` — suíte completa (node:test, `tests/*.test.mjs` e `tests/*.test.js`). Rodar antes de dizer que terminou.
 - `npm run test:negocio` — os 5 cenários de homologação (`tests/regrasNegocio.test.js`)
-- `npm run db:migrate` — migrações versionadas em `lib/db.js` (`MIGRACOES`)
+- `npm run db:migrate` — migrações versionadas em `lib/db.js` (`MIGRACOES`); no build de produção da Vercel elas rodam
+  sozinhas (`scripts/migrarNoBuild.mjs`, antes do `next build`)
 - `npm run seed` — massa de exemplo; só apaga/recria registros `[EXEMPLO]` (telefones `5500900…`); remoto exige `--confirmar-remoto`
 - `npm run verificar -- <ambiente|banco|whatsapp|email <destino>|ia|webhook <url>>` — testa os serviços reais
 - Variáveis: `.env.example`. Scripts leem `.env` e `.env.local` (o `.env.local` prevalece; variáveis do terminal valem mais).

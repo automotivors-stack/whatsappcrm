@@ -33,6 +33,7 @@ export function checarAmbiente(env = process.env) {
   const problemas = [];
   for (const [nome, uso] of OBRIGATORIAS) {
     if (nome === "TURSO_AUTH_TOKEN" && String(env.TURSO_DATABASE_URL ?? "").startsWith("file:")) continue;
+    if (nome === "TURSO_AUTH_TOKEN" && env.TURSO_DATABASE_AUTH_TOKEN) continue; // nome da integração da Vercel
     if (!env[nome]) problemas.push(`${nome} vazia (${uso})`);
   }
   if (env.AGENTE_MODELO && MODELOS_APOSENTADOS.test(env.AGENTE_MODELO)) {
